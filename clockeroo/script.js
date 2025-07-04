@@ -735,108 +735,59 @@ const clockerooApp = {
 
       // Use the appropriate generator based on language
       const generators = {
-        'no': generateNorwegianTime,
-        'en-gb': generateBritishTime,
-        'en-us': generateAmericanTime
+        'no': (hour, minute) => generateTimeString(hour, minute, 'no'),
+        'en-gb': (hour, minute) => generateTimeString(hour, minute, 'en-gb'),
+        'en-us': (hour, minute) => generateTimeString(hour, minute, 'en-us')
       };
 
       const generator = generators[currentLanguage.value];
       return generator ? generator(hour, minute) : 'Time description';
     }
 
-    function generateNorwegianTime(hour, minute) {
-      const lang = languages['no'];
+    function generateTimeString(hour, minute, languageCode) {
+      const lang = timeLanguages[languageCode];
       const roundedMinute = Math.round(minute / 5) * 5;
 
       if (roundedMinute === 0 || roundedMinute === 60) {
         const displayHour = roundedMinute === 60 ? (hour + 1) % 24 : hour % 24;
-        return lang.numbers[displayHour];
+        return formatHourExpression(displayHour, lang.minuteWords[roundedMinute === 60 ? 0 : roundedMinute], lang);
       }
 
       const minuteWord = lang.minuteWords[roundedMinute];
       if (!minuteWord) {
-        return lang.numbers[hour % 24];
+        return formatHourExpression(hour % 24, lang.minuteWords[0], lang);
       }
 
       let targetHour = hour % 24;
 
-      if (roundedMinute === 30) {
+      if (lang.useNextHourForMinutes && lang.useNextHourForMinutes.includes(roundedMinute)) {
         targetHour = (hour + 1) % 24;
-        return `${minuteWord} ${lang.numbers[targetHour]}`;
-      } else if (roundedMinute >= 35 && roundedMinute <= 55) {
-        targetHour = (hour + 1) % 24;
-        return `${minuteWord} ${lang.numbers[targetHour]}`;
-      } else if (roundedMinute >= 45) {
-        targetHour = (hour + 1) % 24;
-        return `${minuteWord} ${lang.numbers[targetHour]}`;
       }
-
-      return `${minuteWord} ${lang.numbers[targetHour]}`;
-    }
-
-    function generateBritishTime(hour, minute) {
-      const lang = languages['en-gb'];
-      const roundedMinute = Math.round(minute / 5) * 5;
-
-      if (roundedMinute === 60) {
-        const nextHour = (hour + 1) % 24;
-        const displayHour = nextHour % 12 === 0 ? 12 : nextHour % 12;
-        return `${lang.numbers[displayHour]} o'clock`;
-      }
-
-      const minuteWord = lang.minuteWords[roundedMinute];
-      if (!minuteWord) {
-        let displayHour = hour % 12 === 0 ? 12 : hour % 12;
-        return `${lang.numbers[displayHour]} o'clock`;
-      }
-
-      let targetHour = hour % 12 === 0 ? 12 : hour % 12;
 
       if (roundedMinute === 0) {
-        return `${lang.numbers[targetHour]} ${minuteWord}`;
+        return formatHourExpression(targetHour, minuteWord, lang);
       }
 
-      if (roundedMinute > 30) {
-        targetHour = targetHour === 12 ? 1 : targetHour + 1;
-        return `${minuteWord} ${lang.numbers[targetHour]}`;
-      }
-
-      return `${minuteWord} ${lang.numbers[targetHour]}`;
+      return formatTimeExpression(minuteWord, targetHour, lang);
     }
 
-    function generateAmericanTime(hour, minute) {
-      const lang = languages['en-us'];
-      let hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-      let ampm = hour < 12 ? 'AM' : 'PM';
-
-      const roundedMinute = Math.round(minute / 5) * 5;
-
-      if (roundedMinute === 0) {
-        return `${lang.numbers[hour12]} o'clock ${ampm}`;
-      }
-
-      if (roundedMinute === 60) {
-        const nextHour = hour + 1;
-        const nextHour12 = nextHour === 0 ? 12 : nextHour > 12 ? nextHour - 12 : nextHour;
-        const nextAmPm = nextHour < 12 ? 'AM' : 'PM';
-        return `${lang.numbers[nextHour12]} o'clock ${nextAmPm}`;
-      }
-
-      const minuteWord = lang.minuteWords[roundedMinute];
-      if (!minuteWord) {
-        return `${lang.numbers[hour12]} o'clock ${ampm}`;
-      }
-
-      if (roundedMinute === 15) {
-        return `quarter past ${lang.numbers[hour12]} ${ampm}`;
-      } else if (roundedMinute === 30) {
-        return `${lang.numbers[hour12]} thirty ${ampm}`;
-      } else if (roundedMinute === 45) {
-        const nextHour = hour12 === 12 ? 1 : hour12 + 1;
-        const nextAmPm = (hour === 11) ? 'PM' : (hour === 23) ? 'AM' : ampm;
-        return `quarter to ${lang.numbers[nextHour]} ${nextAmPm}`;
+    function formatHourExpression(hour, minuteWord, lang) {
+      if (lang.use24Hour) {
+        return minuteWord ? `${lang.numbers[hour]} ${minuteWord}` : lang.numbers[hour];
       } else {
-        return `${lang.numbers[hour12]} ${minuteWord} ${ampm}`;
+        const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        const ampm = hour < 12 ? 'AM' : 'PM';
+        return minuteWord ? `${lang.numbers[hour12]} ${minuteWord} ${ampm}` : `${lang.numbers[hour12]} ${ampm}`;
+      }
+    }
+
+    function formatTimeExpression(minuteWord, targetHour, lang) {
+      if (lang.use24Hour) {
+        return `${minuteWord} ${lang.numbers[targetHour]}`;
+      } else {
+        const hour12 = targetHour === 0 ? 12 : targetHour > 12 ? targetHour - 12 : targetHour;
+        const ampm = targetHour < 12 ? 'AM' : 'PM';
+        return `${minuteWord} ${lang.numbers[hour12]} ${ampm}`;
       }
     }
 

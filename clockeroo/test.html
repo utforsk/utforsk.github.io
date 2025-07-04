@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clockeroo Time Expression Test Suite</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 12px;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+        .stat-card.passed { border-color: #28a745; background-color: #d4edda; }
+        .stat-card.failed { border-color: #dc3545; background-color: #f8d7da; }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .filters {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .filter-group {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        .filter-group label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .test-row.passed {
+            background-color: #d4edda;
+        }
+        .test-row.failed {
+            background-color: #f8d7da;
+        }
+        .test-row.hidden {
+            display: none;
+        }
+        .time-digital {
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .time-text {
+            font-style: italic;
+            color: #333;
+        }
+        .expected {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .actual {
+            color: #000;
+        }
+        .debug-info {
+            font-size: 10px;
+            color: #666;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .status {
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .status.pass {
+            background-color: #28a745;
+            color: white;
+        }
+        .status.fail {
+            background-color: #dc3545;
+            color: white;
+        }
+        .run-tests {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .run-tests:hover {
+            background: #0056b3;
+        }
+        .language-section {
+            margin-bottom: 40px;
+        }
+        .language-header {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .critical-tests {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .critical-tests h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕐 Clockeroo Time Expression Test Suite</h1>
+        
+        <div class="critical-tests">
+            <h3>⚠️ Critical Bug Tests</h3>
+            <p>These tests specifically target the bugs that were reported:</p>
+            <ul>
+                <li><strong>13:20</strong> should be "ti på halv to" (NOT "ti på halv ett")</li>
+                <li><strong>16:25</strong> should be "fem på halv fem" (NOT "fem på halv tre")</li>
+                <li>All similar "halv" expressions must reference the correct hour</li>
+                <li>All English "to" expressions must reference the correct hour</li>
+            </ul>
+        </div>
+
+        <div class="summary" id="summary">
+            <!-- Summary stats will be populated here -->
+        </div>
+
+        <button class="run-tests" onclick="runAllTests()">🔄 Run All Tests</button>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Language:</label>
+                <select id="languageFilter" onchange="filterTests()">
+                    <option value="">All Languages</option>
+                    <option value="no">Norwegian</option>
+                    <option value="en-gb">English (UK)</option>
+                    <option value="en-us">English (US)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="statusFilter" onchange="filterTests()">
+                    <option value="">All Results</option>
+                    <option value="passed">Passed Only</option>
+                    <option value="failed">Failed Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Time Range:</label>
+                <select id="timeFilter" onchange="filterTests()">
+                    <option value="">All Times</option>
+                    <option value="critical">Critical Bug Cases</option>
+                    <option value="halv">Norwegian "halv" expressions</option>
+                    <option value="to">English "to" expressions</option>
+                    <option value="midnight">Midnight transitions</option>
+                    <option value="noon">Noon transitions</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="testResults">
+            <!-- Test results will be populated here -->
+        </div>
+    </div>
+
+    <script src="languages.js"></script>
+    <script>
+        // Import time generation logic from the main application
+        function generateTimeString(hour, minute, languageCode) {
+            const lang = timeLanguages[languageCode];
+            const roundedMinute = Math.round(minute / 5) * 5;
+
+            if (roundedMinute === 0 || roundedMinute === 60) {
+                const displayHour = roundedMinute === 60 ? (hour + 1) % 24 : hour % 24;
+                return formatHourExpression(displayHour, lang.minuteWords[roundedMinute === 60 ? 0 : roundedMinute], lang);
+            }
+
+            const minuteWord = lang.minuteWords[roundedMinute];
+            if (!minuteWord) {
+                return formatHourExpression(hour % 24, lang.minuteWords[0], lang);
+            }
+
+            let targetHour = hour % 24;
+
+            if (lang.useNextHourForMinutes && lang.useNextHourForMinutes.includes(roundedMinute)) {
+                targetHour = (hour + 1) % 24;
+            }
+
+            if (roundedMinute === 0) {
+                return formatHourExpression(targetHour, minuteWord, lang);
+            }
+
+            return formatTimeExpression(minuteWord, targetHour, lang);
+        }
+
+        function formatHourExpression(hour, minuteWord, lang) {
+            if (lang.use24Hour) {
+                return minuteWord ? `${lang.numbers[hour]} ${minuteWord}` : lang.numbers[hour];
+            } else {
+                const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                const ampm = hour < 12 ? 'AM' : 'PM';
+                return minuteWord ? `${lang.numbers[hour12]} ${minuteWord} ${ampm}` : `${lang.numbers[hour12]} ${ampm}`;
+            }
+        }
+
+        function formatTimeExpression(minuteWord, targetHour, lang) {
+            if (lang.use24Hour) {
+                return `${minuteWord} ${lang.numbers[targetHour]}`;
+            } else {
+                const hour12 = targetHour === 0 ? 12 : targetHour > 12 ? targetHour - 12 : targetHour;
+                const ampm = targetHour < 12 ? 'AM' : 'PM';
+                return `${minuteWord} ${lang.numbers[hour12]} ${ampm}`;
+            }
+        }
+
+        // Comprehensive test cases covering all edge cases
+        const testCases = [
+            // Critical bug cases - these were the original reported issues
+            { hour: 13, minute: 20, lang: 'no', expected: 'ti på halv to', category: 'critical', description: 'Original bug: 13:20 Norwegian' },
+            { hour: 16, minute: 25, lang: 'no', expected: 'fem på halv fem', category: 'critical', description: 'Original bug: 16:25 Norwegian' },
+            
+            // Norwegian "halv" expressions - comprehensive coverage
+            { hour: 0, minute: 20, lang: 'no', expected: 'ti på halv ett', category: 'halv', description: 'Midnight "halv" transition' },
+            { hour: 0, minute: 25, lang: 'no', expected: 'fem på halv ett', category: 'halv', description: 'Midnight "halv" transition' },
+            { hour: 0, minute: 30, lang: 'no', expected: 'halv ett', category: 'halv', description: 'Midnight "halv" exact' },
+            { hour: 0, minute: 35, lang: 'no', expected: 'fem over halv ett', category: 'halv', description: 'Midnight "halv" over' },
+            { hour: 0, minute: 40, lang: 'no', expected: 'ti over halv ett', category: 'halv', description: 'Midnight "halv" over' },
+            { hour: 11, minute: 20, lang: 'no', expected: 'ti på halv tolv', category: 'halv', description: 'Noon "halv" transition' },
+            { hour: 11, minute: 25, lang: 'no', expected: 'fem på halv tolv', category: 'halv', description: 'Noon "halv" transition' },
+            { hour: 11, minute: 30, lang: 'no', expected: 'halv tolv', category: 'halv', description: 'Noon "halv" exact' },
+            { hour: 11, minute: 35, lang: 'no', expected: 'fem over halv tolv', category: 'halv', description: 'Noon "halv" over' },
+            { hour: 11, minute: 40, lang: 'no', expected: 'ti over halv tolv', category: 'halv', description: 'Noon "halv" over' },
+            { hour: 23, minute: 20, lang: 'no', expected: 'ti på halv tolv', category: 'halv', description: 'Late night "halv" transition' },
+            { hour: 23, minute: 25, lang: 'no', expected: 'fem på halv tolv', category: 'halv', description: 'Late night "halv" transition' },
+            { hour: 23, minute: 30, lang: 'no', expected: 'halv tolv', category: 'halv', description: 'Late night "halv" exact' },
+            { hour: 23, minute: 35, lang: 'no', expected: 'fem over halv tolv', category: 'halv', description: 'Late night "halv" over' },
+            { hour: 23, minute: 40, lang: 'no', expected: 'ti over halv tolv', category: 'halv', description: 'Late night "halv" over' },
+            
+            // Norwegian "på" expressions (should reference next hour)
+            { hour: 1, minute: 45, lang: 'no', expected: 'kvart på to', category: 'halv', description: 'Norwegian "på" expression' },
+            { hour: 1, minute: 50, lang: 'no', expected: 'ti på to', category: 'halv', description: 'Norwegian "på" expression' },
+            { hour: 1, minute: 55, lang: 'no', expected: 'fem på to', category: 'halv', description: 'Norwegian "på" expression' },
+            { hour: 23, minute: 45, lang: 'no', expected: 'kvart på tolv', category: 'halv', description: 'Norwegian "på" midnight transition' },
+            { hour: 23, minute: 50, lang: 'no', expected: 'ti på tolv', category: 'halv', description: 'Norwegian "på" midnight transition' },
+            { hour: 23, minute: 55, lang: 'no', expected: 'fem på tolv', category: 'halv', description: 'Norwegian "på" midnight transition' },
+            
+            // Norwegian "over" expressions (should reference current hour)
+            { hour: 1, minute: 5, lang: 'no', expected: 'fem over ett', category: 'halv', description: 'Norwegian "over" expression' },
+            { hour: 1, minute: 10, lang: 'no', expected: 'ti over ett', category: 'halv', description: 'Norwegian "over" expression' },
+            { hour: 1, minute: 15, lang: 'no', expected: 'kvart over ett', category: 'halv', description: 'Norwegian "over" expression' },
+            
+            // English UK "to" expressions - comprehensive coverage
+            { hour: 0, minute: 35, lang: 'en-gb', expected: 'twenty-five to one', category: 'to', description: 'Midnight "to" transition' },
+            { hour: 0, minute: 40, lang: 'en-gb', expected: 'twenty to one', category: 'to', description: 'Midnight "to" transition' },
+            { hour: 0, minute: 45, lang: 'en-gb', expected: 'quarter to one', category: 'to', description: 'Midnight "to" transition' },
+            { hour: 0, minute: 50, lang: 'en-gb', expected: 'ten to one', category: 'to', description: 'Midnight "to" transition' },
+            { hour: 0, minute: 55, lang: 'en-gb', expected: 'five to one', category: 'to', description: 'Midnight "to" transition' },
+            { hour: 11, minute: 35, lang: 'en-gb', expected: 'twenty-five to twelve', category: 'to', description: 'Noon "to" transition' },
+            { hour: 11, minute: 40, lang: 'en-gb', expected: 'twenty to twelve', category: 'to', description: 'Noon "to" transition' },
+            { hour: 11, minute: 45, lang: 'en-gb', expected: 'quarter to twelve', category: 'to', description: 'Noon "to" transition' },
+            { hour: 11, minute: 50, lang: 'en-gb', expected: 'ten to twelve', category: 'to', description: 'Noon "to" transition' },
+            { hour: 11, minute: 55, lang: 'en-gb', expected: 'five to twelve', category: 'to', description: 'Noon "to" transition' },
+            { hour: 23, minute: 35, lang: 'en-gb', expected: 'twenty-five to twelve', category: 'to', description: 'Late night "to" transition' },
+            { hour: 23, minute: 40, lang: 'en-gb', expected: 'twenty to twelve', category: 'to', description: 'Late night "to" transition' },
+            { hour: 23, minute: 45, lang: 'en-gb', expected: 'quarter to twelve', category: 'to', description: 'Late night "to" transition' },
+            { hour: 23, minute: 50, lang: 'en-gb', expected: 'ten to twelve', category: 'to', description: 'Late night "to" transition' },
+            { hour: 23, minute: 55, lang: 'en-gb', expected: 'five to twelve', category: 'to', description: 'Late night "to" transition' },
+            
+            // English UK "past" expressions (should reference current hour)
+            { hour: 1, minute: 5, lang: 'en-gb', expected: 'five past one', category: 'to', description: 'English UK "past" expression' },
+            { hour: 1, minute: 10, lang: 'en-gb', expected: 'ten past one', category: 'to', description: 'English UK "past" expression' },
+            { hour: 1, minute: 15, lang: 'en-gb', expected: 'quarter past one', category: 'to', description: 'English UK "past" expression' },
+            { hour: 1, minute: 20, lang: 'en-gb', expected: 'twenty past one', category: 'to', description: 'English UK "past" expression' },
+            { hour: 1, minute: 25, lang: 'en-gb', expected: 'twenty-five past one', category: 'to', description: 'English UK "past" expression' },
+            { hour: 1, minute: 30, lang: 'en-gb', expected: 'half past one', category: 'to', description: 'English UK "past" expression' },
+            
+            // English US "to" expressions with AM/PM - comprehensive coverage
+            { hour: 0, minute: 35, lang: 'en-us', expected: 'twenty-five to one AM', category: 'to', description: 'US midnight "to" transition' },
+            { hour: 0, minute: 40, lang: 'en-us', expected: 'twenty to one AM', category: 'to', description: 'US midnight "to" transition' },
+            { hour: 0, minute: 45, lang: 'en-us', expected: 'quarter to one AM', category: 'to', description: 'US midnight "to" transition' },
+            { hour: 0, minute: 50, lang: 'en-us', expected: 'ten to one AM', category: 'to', description: 'US midnight "to" transition' },
+            { hour: 0, minute: 55, lang: 'en-us', expected: 'five to one AM', category: 'to', description: 'US midnight "to" transition' },
+            { hour: 11, minute: 35, lang: 'en-us', expected: 'twenty-five to twelve PM', category: 'to', description: 'US noon "to" transition' },
+            { hour: 11, minute: 40, lang: 'en-us', expected: 'twenty to twelve PM', category: 'to', description: 'US noon "to" transition' },
+            { hour: 11, minute: 45, lang: 'en-us', expected: 'quarter to twelve PM', category: 'to', description: 'US noon "to" transition' },
+            { hour: 11, minute: 50, lang: 'en-us', expected: 'ten to twelve PM', category: 'to', description: 'US noon "to" transition' },
+            { hour: 11, minute: 55, lang: 'en-us', expected: 'five to twelve PM', category: 'to', description: 'US noon "to" transition' },
+            { hour: 23, minute: 35, lang: 'en-us', expected: 'twenty-five to twelve AM', category: 'to', description: 'US late night "to" transition' },
+            { hour: 23, minute: 40, lang: 'en-us', expected: 'twenty to twelve AM', category: 'to', description: 'US late night "to" transition' },
+            { hour: 23, minute: 45, lang: 'en-us', expected: 'quarter to twelve AM', category: 'to', description: 'US late night "to" transition' },
+            { hour: 23, minute: 50, lang: 'en-us', expected: 'ten to twelve AM', category: 'to', description: 'US late night "to" transition' },
+            { hour: 23, minute: 55, lang: 'en-us', expected: 'five to twelve AM', category: 'to', description: 'US late night "to" transition' },
+            
+            // English US "past" expressions with AM/PM
+            { hour: 1, minute: 5, lang: 'en-us', expected: 'five past one AM', category: 'to', description: 'US "past" expression AM' },
+            { hour: 1, minute: 10, lang: 'en-us', expected: 'ten past one AM', category: 'to', description: 'US "past" expression AM' },
+            { hour: 1, minute: 15, lang: 'en-us', expected: 'quarter past one AM', category: 'to', description: 'US "past" expression AM' },
+            { hour: 1, minute: 20, lang: 'en-us', expected: 'twenty past one AM', category: 'to', description: 'US "past" expression AM' },
+            { hour: 1, minute: 25, lang: 'en-us', expected: 'twenty-five past one AM', category: 'to', description: 'US "past" expression AM' },
+            { hour: 1, minute: 30, lang: 'en-us', expected: 'half past one AM', category: 'to', description: 'US "past" expression AM' },
+            { hour: 13, minute: 5, lang: 'en-us', expected: 'five past one PM', category: 'to', description: 'US "past" expression PM' },
+            { hour: 13, minute: 10, lang: 'en-us', expected: 'ten past one PM', category: 'to', description: 'US "past" expression PM' },
+            { hour: 13, minute: 15, lang: 'en-us', expected: 'quarter past one PM', category: 'to', description: 'US "past" expression PM' },
+            { hour: 13, minute: 20, lang: 'en-us', expected: 'twenty past one PM', category: 'to', description: 'US "past" expression PM' },
+            { hour: 13, minute: 25, lang: 'en-us', expected: 'twenty-five past one PM', category: 'to', description: 'US "past" expression PM' },
+            { hour: 13, minute: 30, lang: 'en-us', expected: 'half past one PM', category: 'to', description: 'US "past" expression PM' },
+            
+            // Exact hour tests
+            { hour: 0, minute: 0, lang: 'no', expected: 'tolv', category: 'midnight', description: 'Norwegian midnight exact' },
+            { hour: 0, minute: 0, lang: 'en-gb', expected: 'twelve o\'clock', category: 'midnight', description: 'UK midnight exact' },
+            { hour: 0, minute: 0, lang: 'en-us', expected: 'twelve o\'clock AM', category: 'midnight', description: 'US midnight exact' },
+            { hour: 12, minute: 0, lang: 'no', expected: 'tolv', category: 'noon', description: 'Norwegian noon exact' },
+            { hour: 12, minute: 0, lang: 'en-gb', expected: 'twelve o\'clock', category: 'noon', description: 'UK noon exact' },
+            { hour: 12, minute: 0, lang: 'en-us', expected: 'twelve o\'clock PM', category: 'noon', description: 'US noon exact' },
+            
+            // Edge cases around 5-minute rounding
+            { hour: 5, minute: 2, lang: 'no', expected: 'fem', category: 'rounding', description: 'Norwegian rounding down' },
+            { hour: 5, minute: 3, lang: 'no', expected: 'fem over fem', category: 'rounding', description: 'Norwegian rounding up' },
+            { hour: 5, minute: 7, lang: 'no', expected: 'fem over fem', category: 'rounding', description: 'Norwegian rounding down' },
+            { hour: 5, minute: 8, lang: 'no', expected: 'ti over fem', category: 'rounding', description: 'Norwegian rounding up' },
+            { hour: 5, minute: 2, lang: 'en-gb', expected: 'five o\'clock', category: 'rounding', description: 'UK rounding down' },
+            { hour: 5, minute: 3, lang: 'en-gb', expected: 'five past five', category: 'rounding', description: 'UK rounding up' },
+            { hour: 5, minute: 7, lang: 'en-gb', expected: 'five past five', category: 'rounding', description: 'UK rounding down' },
+            { hour: 5, minute: 8, lang: 'en-gb', expected: 'ten past five', category: 'rounding', description: 'UK rounding up' },
+            { hour: 5, minute: 2, lang: 'en-us', expected: 'five o\'clock AM', category: 'rounding', description: 'US rounding down' },
+            { hour: 5, minute: 3, lang: 'en-us', expected: 'five past five AM', category: 'rounding', description: 'US rounding up' },
+            { hour: 5, minute: 7, lang: 'en-us', expected: 'five past five AM', category: 'rounding', description: 'US rounding down' },
+            { hour: 5, minute: 8, lang: 'en-us', expected: 'ten past five AM', category: 'rounding', description: 'US rounding up' },
+            
+            // Additional comprehensive hour coverage
+            { hour: 1, minute: 0, lang: 'no', expected: 'ett', category: 'hour', description: 'Norwegian 1 o\'clock' },
+            { hour: 2, minute: 0, lang: 'no', expected: 'to', category: 'hour', description: 'Norwegian 2 o\'clock' },
+            { hour: 3, minute: 0, lang: 'no', expected: 'tre', category: 'hour', description: 'Norwegian 3 o\'clock' },
+            { hour: 4, minute: 0, lang: 'no', expected: 'fire', category: 'hour', description: 'Norwegian 4 o\'clock' },
+            { hour: 5, minute: 0, lang: 'no', expected: 'fem', category: 'hour', description: 'Norwegian 5 o\'clock' },
+            { hour: 6, minute: 0, lang: 'no', expected: 'seks', category: 'hour', description: 'Norwegian 6 o\'clock' },
+            { hour: 7, minute: 0, lang: 'no', expected: 'syv', category: 'hour', description: 'Norwegian 7 o\'clock' },
+            { hour: 8, minute: 0, lang: 'no', expected: 'åtte', category: 'hour', description: 'Norwegian 8 o\'clock' },
+            { hour: 9, minute: 0, lang: 'no', expected: 'ni', category: 'hour', description: 'Norwegian 9 o\'clock' },
+            { hour: 10, minute: 0, lang: 'no', expected: 'ti', category: 'hour', description: 'Norwegian 10 o\'clock' },
+            { hour: 11, minute: 0, lang: 'no', expected: 'elleve', category: 'hour', description: 'Norwegian 11 o\'clock' },
+            { hour: 13, minute: 0, lang: 'no', expected: 'ett', category: 'hour', description: 'Norwegian 13 o\'clock (1 PM)' },
+            { hour: 14, minute: 0, lang: 'no', expected: 'to', category: 'hour', description: 'Norwegian 14 o\'clock (2 PM)' },
+            { hour: 15, minute: 0, lang: 'no', expected: 'tre', category: 'hour', description: 'Norwegian 15 o\'clock (3 PM)' },
+            { hour: 16, minute: 0, lang: 'no', expected: 'fire', category: 'hour', description: 'Norwegian 16 o\'clock (4 PM)' },
+            { hour: 17, minute: 0, lang: 'no', expected: 'fem', category: 'hour', description: 'Norwegian 17 o\'clock (5 PM)' },
+            { hour: 18, minute: 0, lang: 'no', expected: 'seks', category: 'hour', description: 'Norwegian 18 o\'clock (6 PM)' },
+            { hour: 19, minute: 0, lang: 'no', expected: 'syv', category: 'hour', description: 'Norwegian 19 o\'clock (7 PM)' },
+            { hour: 20, minute: 0, lang: 'no', expected: 'åtte', category: 'hour', description: 'Norwegian 20 o\'clock (8 PM)' },
+            { hour: 21, minute: 0, lang: 'no', expected: 'ni', category: 'hour', description: 'Norwegian 21 o\'clock (9 PM)' },
+            { hour: 22, minute: 0, lang: 'no', expected: 'ti', category: 'hour', description: 'Norwegian 22 o\'clock (10 PM)' },
+            { hour: 23, minute: 0, lang: 'no', expected: 'elleve', category: 'hour', description: 'Norwegian 23 o\'clock (11 PM)' },
+        ];
+
+        let testResults = [];
+
+        function runAllTests() {
+            console.log('Running all tests...');
+            testResults = [];
+            
+            testCases.forEach((testCase, index) => {
+                const result = runSingleTest(testCase, index);
+                testResults.push(result);
+            });
+            
+            updateSummary();
+            renderTestResults();
+            console.log('All tests completed');
+        }
+
+        function runSingleTest(testCase, index) {
+            const { hour, minute, lang, expected, category, description } = testCase;
+            
+            try {
+                const actual = generateTimeString(hour, minute, lang);
+                const passed = actual === expected;
+                const roundedMinute = Math.round(minute / 5) * 5;
+                const langConfig = timeLanguages[lang];
+                const usesNextHour = langConfig.useNextHourForMinutes && langConfig.useNextHourForMinutes.includes(roundedMinute);
+                
+                const debugInfo = {
+                    roundedMinute,
+                    usesNextHour,
+                    targetHour: usesNextHour ? (hour + 1) % 24 : hour % 24,
+                    nextHourMinutes: langConfig.useNextHourForMinutes || [],
+                    minuteWord: langConfig.minuteWords[roundedMinute] || 'N/A'
+                };
+                
+                return {
+                    index,
+                    hour,
+                    minute,
+                    lang,
+                    expected,
+                    actual,
+                    passed,
+                    category,
+                    description,
+                    debugInfo
+                };
+            } catch (error) {
+                return {
+                    index,
+                    hour,
+                    minute,
+                    lang,
+                    expected,
+                    actual: `ERROR: ${error.message}`,
+                    passed: false,
+                    category,
+                    description,
+                    debugInfo: { error: error.message }
+                };
+            }
+        }
+
+        function updateSummary() {
+            const total = testResults.length;
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = total - passed;
+            const passRate = total > 0 ? (passed / total * 100).toFixed(1) : 0;
+            
+            const criticalTests = testResults.filter(r => r.category === 'critical');
+            const criticalPassed = criticalTests.filter(r => r.passed).length;
+            const criticalFailed = criticalTests.length - criticalPassed;
+            
+            const summaryHTML = `
+                <div class="stat-card ${passed === total ? 'passed' : 'failed'}">
+                    <div class="stat-number">${total}</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+                <div class="stat-card ${passed === total ? 'passed' : 'failed'}">
+                    <div class="stat-number">${passed}</div>
+                    <div class="stat-label">Passed</div>
+                </div>
+                <div class="stat-card ${failed === 0 ? 'passed' : 'failed'}">
+                    <div class="stat-number">${failed}</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card ${passRate >= 90 ? 'passed' : 'failed'}">
+                    <div class="stat-number">${passRate}%</div>
+                    <div class="stat-label">Pass Rate</div>
+                </div>
+                <div class="stat-card ${criticalPassed === criticalTests.length ? 'passed' : 'failed'}">
+                    <div class="stat-number">${criticalPassed}/${criticalTests.length}</div>
+                    <div class="stat-label">Critical Tests</div>
+                </div>
+            `;
+            
+            document.getElementById('summary').innerHTML = summaryHTML;
+        }
+
+        function renderTestResults() {
+            const languages = ['no', 'en-gb', 'en-us'];
+            const languageNames = {
+                'no': 'Norwegian (Norsk)',
+                'en-gb': 'English (UK)',
+                'en-us': 'English (US)'
+            };
+            
+            let html = '';
+            
+            languages.forEach(lang => {
+                const langTests = testResults.filter(r => r.lang === lang);
+                if (langTests.length === 0) return;
+                
+                html += `
+                    <div class="language-section">
+                        <div class="language-header">
+                            ${languageNames[lang]} - ${langTests.filter(r => r.passed).length}/${langTests.length} tests passed
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Digital</th>
+                                    <th>Expected</th>
+                                    <th>Actual</th>
+                                    <th>Status</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Debug Info</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                langTests.forEach(result => {
+                    const { hour, minute, expected, actual, passed, category, description, debugInfo } = result;
+                    const digitalTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    const debugText = JSON.stringify(debugInfo, null, 2);
+                    
+                    html += `
+                        <tr class="test-row ${passed ? 'passed' : 'failed'}" data-lang="${lang}" data-status="${passed ? 'passed' : 'failed'}" data-category="${category}">
+                            <td class="time-digital">${digitalTime}</td>
+                            <td class="expected">${expected}</td>
+                            <td class="actual">${actual}</td>
+                            <td><span class="status ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+                            <td>${category}</td>
+                            <td>${description}</td>
+                            <td><pre class="debug-info">${debugText}</pre></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('testResults').innerHTML = html;
+        }
+
+        function filterTests() {
+            const languageFilter = document.getElementById('languageFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const timeFilter = document.getElementById('timeFilter').value;
+            
+            const rows = document.querySelectorAll('.test-row');
+            
+            rows.forEach(row => {
+                let show = true;
+                
+                if (languageFilter && row.dataset.lang !== languageFilter) {
+                    show = false;
+                }
+                
+                if (statusFilter && row.dataset.status !== statusFilter) {
+                    show = false;
+                }
+                
+                if (timeFilter) {
+                    const category = row.dataset.category;
+                    switch (timeFilter) {
+                        case 'critical':
+                            if (category !== 'critical') show = false;
+                            break;
+                        case 'halv':
+                            if (category !== 'halv') show = false;
+                            break;
+                        case 'to':
+                            if (category !== 'to') show = false;
+                            break;
+                        case 'midnight':
+                            if (category !== 'midnight') show = false;
+                            break;
+                        case 'noon':
+                            if (category !== 'noon') show = false;
+                            break;
+                    }
+                }
+                
+                row.classList.toggle('hidden', !show);
+            });
+        }
+
+        // Run tests automatically on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            runAllTests();
+        });
+    </script>
+</body>
+</html>

@@ -396,7 +396,8 @@ const timeLanguages = {
       50: 'ti på',
       55: 'fem på'
     },
-    use24Hour: true
+    use24Hour: true,
+    useNextHourForMinutes: [20, 25, 30, 35, 40, 45, 50, 55]
   },
   'en-gb': {
     name: 'English (UK)',
@@ -427,7 +428,8 @@ const timeLanguages = {
       50: 'ten to',
       55: 'five to'
     },
-    use24Hour: true
+    use24Hour: true,
+    useNextHourForMinutes: [35, 40, 45, 50, 55]
   },
   'en-us': {
     name: 'English (US)',
@@ -446,18 +448,19 @@ const timeLanguages = {
     numbers: ['twelve', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'],
     minuteWords: {
       0: 'o\'clock',
-      5: 'oh five',
-      10: 'ten',
-      15: 'fifteen',
-      20: 'twenty',
-      25: 'twenty-five',
-      30: 'thirty',
-      35: 'thirty-five',
-      40: 'forty',
-      45: 'forty-five',
-      50: 'fifty',
-      55: 'fifty-five'
+      5: 'five past',
+      10: 'ten past',
+      15: 'quarter past',
+      20: 'twenty past',
+      25: 'twenty-five past',
+      30: 'half past',
+      35: 'twenty-five to',
+      40: 'twenty to',
+      45: 'quarter to',
+      50: 'ten to',
+      55: 'five to'
     },
-    use24Hour: false
+    use24Hour: false,
+    useNextHourForMinutes: [35, 40, 45, 50, 55]
   }
 };
