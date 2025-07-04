@@ -287,7 +287,7 @@ body {
 }
 
 body {
-    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-middle) 50%, var(--bg-gradient-end) 100%);
     display: flex;
     flex-direction: column;
@@ -774,13 +774,60 @@ body {
     min-width: 140px;
 }
 
-/* Override for portrait mode */
+/* Override for portrait mode - vertical layout */
 @media (max-aspect-ratio: 1/1) {
     .time-controls-column {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
+        display: flex !important;
+        flex-direction: column !important;
         gap: 8px !important;
         min-width: unset !important;
+        width: 100%;
+        max-width: 100%;
+        padding: 0 8px;
+        box-sizing: border-box;
+    }
+    
+    .time-control {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 6px 8px !important;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    
+    /* Usable sizes for mobile touch */
+    .control-btn {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+        border-width: 2px !important;
+        box-shadow: 0 2px 6px rgba(78, 205, 196, 0.3) !important;
+    }
+    
+    .time-display {
+        width: 50px !important;
+        height: 44px !important;
+        font-size: 16px !important;
+        border-width: 2px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .time-input-group {
+        gap: 6px !important;
+        justify-content: flex-end !important;
+        flex: 1 !important;
+    }
+    
+    .time-control label {
+        font-size: 11px !important;
+        text-align: left !important;
+        font-weight: bold !important;
+        color: #2c3e50 !important;
+        min-width: 45px !important;
+        flex-shrink: 0 !important;
     }
 }
 
@@ -1085,7 +1132,7 @@ body {
 /* Portrait mode - controls at bottom */
 @media (max-aspect-ratio: 1/1) {
     .main-content {
-        padding-bottom: 250px;
+        padding-bottom: 35vh;
         padding-top: 25px;
         padding-left: 25px;
         padding-right: 25px;
@@ -1097,41 +1144,41 @@ body {
     }
 
     .clock {
-        width: min(80vw, calc(100vh - 360px));
-        height: min(80vw, calc(100vh - 360px));
+        width: min(80vw, calc(65vh - 40px));
+        height: min(80vw, calc(65vh - 40px));
     }
 
 
     .hour-hand {
-        height: calc(min(85vw, calc(100vh - 340px)) * 0.25);
+        height: calc(min(80vw, calc(65vh - 40px)) * 0.25);
     }
 
     .minute-hand {
-        height: calc(min(85vw, calc(100vh - 340px)) * 0.35);
+        height: calc(min(80vw, calc(65vh - 40px)) * 0.35);
     }
 
     .second-hand {
-        height: calc(min(85vw, calc(100vh - 340px)) * 0.4);
+        height: calc(min(80vw, calc(65vh - 40px)) * 0.4);
     }
 
     .number {
-        width: calc(min(85vw, calc(100vh - 340px)) * 0.08);
-        height: calc(min(85vw, calc(100vh - 340px)) * 0.08);
-        font-size: calc(min(85vw, calc(100vh - 340px)) * 0.04);
+        width: calc(min(80vw, calc(65vh - 40px)) * 0.08);
+        height: calc(min(80vw, calc(65vh - 40px)) * 0.08);
+        font-size: calc(min(80vw, calc(65vh - 40px)) * 0.04);
     }
 
     .minute-number {
-        font-size: calc(min(85vw, calc(100vh - 340px)) * 0.03);
+        font-size: calc(min(80vw, calc(65vh - 40px)) * 0.03);
     }
 
     .hand-value {
-        width: calc(min(85vw, calc(100vh - 340px)) * 0.06);
-        height: calc(min(85vw, calc(100vh - 340px)) * 0.06);
-        font-size: calc(min(85vw, calc(100vh - 340px)) * 0.025);
+        width: calc(min(80vw, calc(65vh - 40px)) * 0.06);
+        height: calc(min(80vw, calc(65vh - 40px)) * 0.06);
+        font-size: calc(min(80vw, calc(65vh - 40px)) * 0.025);
     }
 
     .digital-time {
-        font-size: calc(min(85vw, calc(100vh - 340px)) * 0.08);
+        font-size: calc(min(80vw, calc(65vh - 40px)) * 0.08);
         padding: 8px 16px;
     }
 
@@ -1140,9 +1187,9 @@ body {
         left: 0;
         right: 0;
         width: 100%;
-        height: auto;
-        min-height: 250px;
-        max-height: calc(100vh - min(80vw, calc(100vh - 360px)) - 80px);
+        height: 35vh;
+        max-height: 35vh;
+        min-height: 200px;
         display: flex;
         flex-direction: column;
     }

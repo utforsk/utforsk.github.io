@@ -13,6 +13,7 @@
 - Use conventional commit messages (feat:, fix:, docs:, etc.)
 - Never include author information in commit messages
 - Keep commits focused and atomic
+- If there are a version defined in the project, html, javascript file or similar, you should always bump the version to match how big the change is.
 
 ### Language Requirements
 - Communication: Norwegian or English only
