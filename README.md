@@ -53,23 +53,25 @@ Everything here was built with:
 ## Projects
 
 Below is a list of projects hosted under `utforsk`.  
-Some are experiments. Some might become tools worth using. Right now, there's only one — and it's coming soon:
+Some are experiments. Some might become tools worth using. Here's what's available:
 
 ---
 
 ### [`clockeroo`](https://utforsk.github.io/clockeroo)
 
-> ⚠️ **Status: Coming Soon**  
-> `clockeroo` is under active development and will be available at [utforsk.github.io/clockeroo](https://utforsk.github.io/clockeroo) when ready.  
+> ✅ **Status: Available**  
+> Try it now at [utforsk.github.io/clockeroo](https://utforsk.github.io/clockeroo)  
 > 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[clockeroo]%20Issue%3A%20&labels=clockeroo)
 
-A playful, interactive learning tool to teach children how to tell time.  
+A playful, interactive learning tool to teach children how to read analog clocks.  
 Built using AI with guidance from a human who still sometimes misreads analog clocks.
 
-- 🧠 Designed to combine humor, repetition, and challenge
-- 🎯 Targets kids aged 5–9
-- 🎲 Game-like interactions, silly feedback, and positive reinforcement
-- 🌐 Runs fully in the browser, no install required
+- 🕐 **Interactive analog clock** with 10 progressive difficulty levels
+- 🎯 **Child-friendly design** for ages 7-12 with encouraging feedback
+- 🌍 **Multilingual support** (Norwegian and English)
+- 🎨 **6 beautiful themes** from Ocean to Galaxy
+- 📊 **Progress tracking** with statistics and performance recommendations
+- 🌐 **Browser-based** - no installation required
 
 More projects will be added here as ideas escape from the prompt buffer.
 
