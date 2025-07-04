@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="nb">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clockeroo - Interaktiv Klokkelæring</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="languages.js"></script>
+</head>
+
+<body>
+    <div id="app">
+    <div class="main-content">
+        <div class="clock-container">
+            <div class="clock" ref="clock">
+                <div class="inner-cover" ref="innerCover" :style="{ width: coverSize + '%', height: coverSize + '%' }"></div>
+                <div class="hour-hand hand" ref="hourHand" v-show="hourVisible" :style="{ transform: `rotate(${displayHourAngle}deg)` }"></div>
+                <div class="minute-hand hand" ref="minuteHand" v-show="minuteVisible" :style="{ transform: `rotate(${displayMinuteAngle}deg)` }"></div>
+                <div class="second-hand hand" ref="secondHand" v-show="secondVisible" :style="{ transform: `rotate(${displaySecondAngle}deg)` }"></div>
+                <div class="clock-center"></div>
+                
+                <!-- Time period indicator (morning, day, evening, night) -->
+                <div class="time-period-indicator" v-show="timePeriodVisible" :class="`period-${timePeriodIndicator.type}`">
+                    <!-- Emoji display -->
+                    <span v-if="timePeriodIndicator.emoji" class="period-emoji">{{ timePeriodIndicator.emoji }}</span>
+                    <!-- SVG display -->
+                    <div v-else-if="timePeriodIndicator.svg" class="period-svg" v-html="timePeriodIndicator.svg"></div>
+                </div>
+
+                <!-- Vue-based hour numbers -->
+                <div 
+                    v-for="number in hourNumbers" 
+                    :key="number.id"
+                    class="number"
+                    :style="number.style"
+                    v-show="hourNumbersVisible"
+                >
+                    {{ number.value }}
+                </div>
+                
+                <!-- Vue-based minute numbers -->
+                <div 
+                    v-for="number in minuteNumbers" 
+                    :key="number.id"
+                    class="minute-number"
+                    :style="number.style"
+                    v-show="minuteNumbersVisible"
+                >
+                    {{ number.value }}
+                </div>
+                
+                <!-- Vue-based hour ticks -->
+                <div 
+                    v-for="tick in hourTicks" 
+                    :key="tick.id"
+                    class="hour-tick"
+                    :style="tick.style"
+                ></div>
+                
+                <!-- Vue-based minute ticks -->
+                <div 
+                    v-for="tick in minuteTicks" 
+                    :key="tick.id"
+                    class="minute-tick"
+                    :style="tick.style"
+                ></div>
+
+                <div class="hand-value" data-type="hour" v-show="handValuesVisible && hourVisible" :style="handValuesPositioned.hour">{{ currentHour }}</div>
+                <div class="hand-value" data-type="minute" v-show="handValuesVisible && minuteVisible" :style="handValuesPositioned.minute">{{ currentMinute }}</div>
+                <div class="hand-value" data-type="second" v-show="handValuesVisible && secondVisible" :style="handValuesPositioned.second">{{ currentSecond }}</div>
+
+                <div class="time-info">
+                    <div class="digital-time" v-show="digitalTimeVisible" v-html="digitalTimeFormatted"></div>
+                    <div class="time-description" v-show="timeDescriptionVisible">{{ timeDescriptionText }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-tabs">
+            <button class="tab-btn" :class="{ active: activeTab === 'time', disabled: gameMode }" :disabled="gameMode" @click="activeTab = 'time'">{{ ui.tabs.time }}</button>
+            <button class="tab-btn" :class="{ active: activeTab === 'visibility', disabled: gameMode }" :disabled="gameMode" @click="activeTab = 'visibility'">{{ ui.tabs.visibility }}</button>
+            <button class="tab-btn" :class="{ active: activeTab === 'language', disabled: gameMode }" :disabled="gameMode" @click="activeTab = 'language'">{{ ui.tabs.language }}</button>
+            <button class="tab-btn" :class="{ active: activeTab === 'game' }" @click="activeTab = 'game'">🎮 {{ ui.game.gameTab }}</button>
+        </div>
+
+        <div class="control-panel" :class="{ active: activeTab === 'time' }">
+            <div class="time-and-presets-layout">
+                <div class="time-controls-section">
+                    <div class="time-controls-column">
+                        <!-- Dynamic time controls using v-for to eliminate duplication -->
+                        <div v-for="control in timeControls" :key="control.field" class="time-control">
+                            <label>{{ control.label() }}</label>
+                            <div class="time-input-group">
+                                <button class="control-btn" @mousedown="startPress(() => control.adjust(-1))" @mouseup="stopPress" @mouseleave="stopPress">-</button>
+                                <div class="time-display" @click="startEditing(control.field)" v-if="editingField !== control.field">{{ String(control.ref.value).padStart(2, '0') }}</div>
+                                <input 
+                                    v-if="editingField === control.field"
+                                    type="number" 
+                                    min="0" 
+                                    :max="control.max"
+                                    v-model="editingValue"
+                                    @blur="finishEditing"
+                                    @keydown.enter="finishEditing"
+                                    @keydown.escape="cancelEditing"
+                                    @keydown.tab="handleTabNavigation($event, control.field)"
+                                    @keydown.up.prevent="adjustCurrentField(1)"
+                                    @keydown.down.prevent="adjustCurrentField(-1)"
+                                    class="time-edit-input"
+                                >
+                                <button class="control-btn" @mousedown="startPress(() => control.adjust(1))" @mouseup="stopPress" @mouseleave="stopPress">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="presets-container">
+                    <button class="preset-now-btn" @click="setCurrentTime">{{ ui.presets.autoTime }}</button>
+                    <button class="preset-live-btn" :class="{ active: liveTimeEnabled }" @click="toggleLiveTime">{{ liveTimeEnabled ? ui.presets.liveTimeStop : ui.presets.liveTime }}</button>
+
+                    <hr class="preset-divider">
+
+                    <!-- Dynamic preset buttons using v-for to eliminate duplication -->
+                    <template v-for="preset in presetButtons" :key="preset.key">
+                        <hr v-if="preset.divider" class="preset-divider">
+                        <button class="preset-btn" @click="setTime(preset.hour, preset.minute, preset.second)">
+                            {{ preset.icon }} {{ String(preset.hour).padStart(2, '0') }}:{{ String(preset.minute).padStart(2, '0') }} {{ ui.presets[preset.key] }}
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-panel" :class="{ active: activeTab === 'visibility' }">
+            <div class="visibility-grid">
+                <!-- Dynamic visibility controls using v-for to eliminate duplication -->
+                <button 
+                    v-for="control in visibilityControls" 
+                    :key="control.hideKey"
+                    class="visibility-btn" 
+                    :class="{ inactive: !control.ref.value }" 
+                    @click="control.ref.value = !control.ref.value"
+                >
+                    {{ control.ref.value ? ui.visibility[control.hideKey] : ui.visibility[control.showKey] }}
+                </button>
+            </div>
+
+            <div class="slider-control">
+                <label for="coverSize">{{ ui.visibility.coverSize }}</label>
+                <input type="range" v-model="coverSize" min="50" max="98" step="1">
+                <span>{{ coverSize }}%</span>
+            </div>
+        </div>
+
+        <div class="control-panel" :class="{ active: activeTab === 'language' }">
+            <div class="language-section">
+                <h4>{{ ui.languages.theme }}</h4>
+                <div class="language-buttons">
+                    <button class="language-btn theme-btn" :class="{ active: currentTheme === 'default' }" @click="setTheme('default')">🌈 {{ ui.themes.default }}</button>
+                    <button class="language-btn theme-btn" :class="{ active: currentTheme === 'ocean' }" @click="setTheme('ocean')">🌊 {{ ui.themes.ocean }}</button>
+                    <button class="language-btn theme-btn" :class="{ active: currentTheme === 'safari' }" @click="setTheme('safari')">🦁 {{ ui.themes.safari }}</button>
+                    <button class="language-btn theme-btn" :class="{ active: currentTheme === 'forest' }" @click="setTheme('forest')">🌲 {{ ui.themes.forest }}</button>
+                    <button class="language-btn theme-btn" :class="{ active: currentTheme === 'galaxy' }" @click="setTheme('galaxy')">🌌 {{ ui.themes.galaxy }}</button>
+                    <button class="language-btn theme-btn" :class="{ active: currentTheme === 'candy' }" @click="setTheme('candy')">🍭 {{ ui.themes.candy }}</button>
+                </div>
+            </div>
+
+
+            <div class="language-section">
+                <h4>{{ ui.languages.timeLanguage }}</h4>
+                <div class="language-buttons">
+                    <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'no' }" @click="currentLanguage = 'no'">🇳🇴 Norsk</button>
+                    <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'en-gb' }" @click="currentLanguage = 'en-gb'">🇬🇧 English (UK)</button>
+                    <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'en-us' }" @click="currentLanguage = 'en-us'">🇺🇸 English (US)</button>
+                </div>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.8); border-radius: 8px; padding: 12px; border: 2px solid #ddd;">
+                <h4 style="margin: 0 0 8px 0; font-size: 11px; color: #2c3e50;">{{ ui.languages.examples }}</h4>
+                <div style="font-size: 10px; color: #666; line-height: 1.4;">
+                    <div v-for="(example, time) in languages[currentLanguage].examples" :key="time">{{ time }} - {{ example }}</div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="control-panel" :class="{ active: activeTab === 'game' }">
+            <!-- Game Sub-Navigation -->
+            <div v-if="!gameMode" class="game-sub-nav">
+                <button 
+                    class="game-sub-btn" 
+                    :class="{ active: !showGameStats }" 
+                    @click="showGameStats = false"
+                >
+                    🎮 {{ ui.game.playButton }}
+                </button>
+                <button 
+                    class="game-sub-btn" 
+                    :class="{ active: showGameStats }" 
+                    @click="showGameStats = true"
+                >
+                    📊 {{ ui.game.statsButton }}
+                </button>
+            </div>
+            
+            <!-- Game Mode Display -->
+            <div v-if="!gameMode && !showGameStats" class="game-start">
+                <h3>🎮 {{ ui.game.gameTitle }}</h3>
+                <p>{{ ui.game.gameDescription }}</p>
+                
+                <!-- Difficulty Selection -->
+                <div v-if="!gameDifficulty" class="difficulty-selection">
+                    <h4>{{ ui.game.selectDifficulty }}</h4>
+                    <div class="difficulty-buttons">
+                        <button 
+                            v-for="(diff, key) in GAME_DIFFICULTIES" 
+                            :key="key"
+                            class="difficulty-btn"
+                            @click="selectDifficulty(key)"
+                        >
+                            <span class="difficulty-icon">{{ diff.icon }}</span>
+                            <span class="difficulty-name">{{ ui.game.difficulties[key] }}</span>
+                            <span class="difficulty-desc">{{ ui.game.difficultyDescriptions[key] }}</span>
+                            <span class="difficulty-max">{{ ui.game.maxPoints.replace('{points}', diff.maxScore) }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Game Stats (shown after difficulty selection) -->
+                <div v-if="gameDifficulty" class="game-stats">
+                    <div class="selected-difficulty">
+                        <span class="diff-badge">{{ GAME_DIFFICULTIES[gameDifficulty].icon }} {{ ui.game.difficulties[gameDifficulty] }}</span>
+                        <button class="change-difficulty-btn" @click="changeDifficulty">{{ ui.game.changeDifficulty }}</button>
+                    </div>
+                    
+                    <!-- Top 3 Scores -->
+                    <div v-if="gameStats.topScores.length > 0" class="top-scores">
+                        <h5>🏆 {{ ui.game.topScores }}</h5>
+                        <div v-for="(score, index) in formattedTopScores" :key="index" class="score-item">
+                            <span class="score-rank">#{{ index + 1 }}</span>
+                            <span class="score-points">{{ score.score }}p</span>
+                            <span class="score-difficulty">{{ ui.game.difficulties[score.difficulty] }}</span>
+                            <span class="score-date" :title="score.detailedDate">{{ score.friendlyDate }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <span class="stat-label">🎯 {{ ui.game.gamesPlayed }}</span>
+                        <span class="stat-value">{{ gameStats.gamesPlayed }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">✅ {{ ui.game.correctAnswers }}</span>
+                        <span class="stat-value">{{ gameStats.totalCorrect }}</span>
+                    </div>
+                    
+                    <div class="game-buttons">
+                        <button class="start-game-btn" @click="startGame">🚀 {{ ui.game.startGame }}</button>
+                        <button v-if="gameStats.topScores.length > 0" class="reset-scores-btn" @click="resetHighScores">🗑️ {{ ui.game.resetScores }}</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Game Playing Interface -->
+            <div v-if="gameMode" class="game-playing">
+                <div class="game-header">
+                    <!-- Adventure Progress - Full Width -->
+                    <div class="adventure-progress">
+                        <div class="adventure-title">{{ ui.game.adventureTitle }}</div>
+                        <div class="adventure-path">
+                            <div class="current-achievement">
+                                <div class="achievement-star">⭐</div>
+                                <div class="achievement-info">
+                                    <div class="achievement-name">{{ ui.game.levels[gameLevel-1] }}</div>
+                                    <div class="achievement-desc">{{ ui.game.levelDescriptions[gameLevel-1] }}</div>
+                                </div>
+                            </div>
+                            <div class="progress-meter">
+                                <div class="progress-label">{{ ui.game.progressLabel }} {{ ui.game.difficulties[gameDifficulty] }}:</div>
+                                <div class="progress-bar">
+                                    <div 
+                                        class="progress-fill" 
+                                        :style="{ width: ((gameLevel - GAME_DIFFICULTIES[gameDifficulty].minLevel) / (GAME_DIFFICULTIES[gameDifficulty].maxLevel - GAME_DIFFICULTIES[gameDifficulty].minLevel)) * 100 + '%' }"
+                                    ></div>
+                                </div>
+                                <div class="progress-text">
+                                    {{ gameLevel - GAME_DIFFICULTIES[gameDifficulty].minLevel + 1 }} / {{ GAME_DIFFICULTIES[gameDifficulty].maxLevel - GAME_DIFFICULTIES[gameDifficulty].minLevel + 1 }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Game Status Row -->
+                    <div class="game-status">
+                        <div class="questions-progress">
+                            <div class="questions-left">{{ ui.game.questionsLabel }} {{ Math.max(1, Math.min(10, 11 - gameQuestionsLeft)) }}/10</div>
+                        </div>
+                        
+                        <div class="game-stats-live">
+                            <div class="lives-section">
+                                <div class="lives-label">{{ ui.game.livesLabel }}</div>
+                                <div class="lives">
+                                    <span v-for="n in 3" :key="n" class="life" :class="{ lost: n > gameLives }">
+                                        {{ n <= gameLives ? '❤️' : '💔' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="score-section">
+                                <div class="score-label">{{ ui.game.pointsLabel }}</div>
+                                <div class="score">{{ gameScore }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-question">
+                    <h4>{{ gameQuestion }}</h4>
+                    
+                    <!-- Hint system -->
+                    <div class="hint-section">
+                        <button 
+                            v-if="gameHintsUsed < GAME_DIFFICULTIES[gameDifficulty].hintsAllowed"
+                            class="hint-btn"
+                            @click="showHint"
+                            :disabled="gameShowingHint"
+                        >
+                            {{ ui.game.hintButton }} ({{ GAME_DIFFICULTIES[gameDifficulty].hintsAllowed - gameHintsUsed }} {{ ui.game.hintsLeft }})
+                        </button>
+                        <div v-if="gameShowingHint" class="game-help">
+                            <div class="help-text">💡 {{ timeDescriptionText }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-answers">
+                        <button 
+                            v-for="(answer, index) in gameAnswers" 
+                            :key="index"
+                            class="answer-btn"
+                            :disabled="gameAnswerProcessing"
+                            @click="answerQuestion(answer)"
+                        >
+                            {{ answer.text }}
+                        </button>
+                    </div>
+                    
+                    <!-- Feedback Messages -->
+                    <div v-if="gameFeedbackMessage" class="game-feedback" :class="gameFeedbackType">
+                        <div class="feedback-icon">{{ gameFeedbackType === 'correct' ? '🎉' : '🤗' }}</div>
+                        <div class="feedback-text">{{ gameFeedbackMessage }}</div>
+                    </div>
+                </div>
+                
+                <button class="quit-game-btn" @click="endGame">{{ ui.game.quitButton }}</button>
+            </div>
+            
+            <!-- Statistics Display -->
+            <div v-if="!gameMode && showGameStats" class="stats-container">
+                <h3>📊 {{ ui.game.gameStatistics }}</h3>
+                
+                <!-- Top 3 Scores -->
+                <div v-if="gameStats.topScores.length > 0" class="top-scores-expanded">
+                    <h4>🏆 {{ ui.game.yourBestResults }}</h4>
+                    <div v-for="(score, index) in formattedTopScores" :key="index" class="score-item-expanded">
+                        <div class="score-header">
+                            <span class="score-rank-big">#{{ index + 1 }}</span>
+                            <span class="score-points-big">{{ score.score }} {{ ui.game.points }}</span>
+                        </div>
+                        <div class="score-details">
+                            <span class="score-difficulty-badge" :class="'diff-' + score.difficulty">
+                                {{ getDifficultyIcon(score.difficulty) }} {{ ui.game.difficulties[score.difficulty] }}
+                            </span>
+                            <span class="score-date-full" :title="score.detailedDate">{{ score.friendlyDate }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-else class="no-scores">
+                    <div class="no-scores-icon">🎯</div>
+                    <p>{{ ui.game.noGamesYet }}</p>
+                    <p>{{ ui.game.startGameToSeeStats }}</p>
+                </div>
+                
+                <!-- General Stats -->
+                <div v-if="gameStats.gamesPlayed > 0" class="general-stats">
+                    <h4>📈 {{ ui.game.generalStats }}</h4>
+                    <div class="stat-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">🎮</div>
+                            <div class="stat-number">{{ gameStats.gamesPlayed }}</div>
+                            <div class="stat-label">{{ ui.game.gamesPlayedLabel }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-number">{{ gameStats.totalCorrect }}</div>
+                            <div class="stat-label">{{ ui.game.correctAnswersLabel }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-number">{{ Math.round((gameStats.totalCorrect / (gameStats.gamesPlayed * 10)) * 100) }}%</div>
+                            <div class="stat-label">{{ ui.game.successRate }}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-number" :title="gameStats.lastPlayed ? getDetailedDate(gameStats.lastPlayed) : ''">{{ formattedLastPlayed }}</div>
+                            <div class="stat-label">{{ ui.game.lastPlayed }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reset Button -->
+                <div v-if="gameStats.topScores.length > 0" class="stats-actions">
+                    <button class="reset-all-btn" @click="resetHighScores">🗑️ {{ ui.game.resetAllStats }}</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Game Results Screen - Full Screen Overlay -->
+    <div v-if="gameShowResults" class="game-results-overlay" @click.self="closeResults">
+        <div class="game-results-modal">
+            <div class="results-header">
+                <div class="results-title">🎉 {{ ui.game.gameComplete }}</div>
+                <button class="close-results-btn" @click="closeResults">×</button>
+            </div>
+            
+            <div class="results-content">
+                <!-- Score Section -->
+                <div class="results-score-section">
+                    <div class="score-display">
+                        <div class="score-number">{{ gameResults.score }}</div>
+                        <div class="score-label">{{ ui.game.points }}</div>
+                    </div>
+                    <div class="accuracy-display">
+                        <div class="accuracy-number">{{ gameResults.accuracy }}%</div>
+                        <div class="accuracy-label">{{ ui.game.correctAnswers }}</div>
+                    </div>
+                </div>
+                
+                <!-- Achievement Badge -->
+                <div class="achievement-section">
+                    <div class="achievement-badge" :class="{
+                        'achievement-bronze': gameResults.maxLevel <= 3,
+                        'achievement-silver': gameResults.maxLevel > 3 && gameResults.maxLevel <= 6,
+                        'achievement-gold': gameResults.maxLevel > 6
+                    }">
+                        <div class="achievement-icon">
+                            {{ gameResults.maxLevel <= 3 ? '🥉' : gameResults.maxLevel <= 6 ? '🥈' : '🥇' }}
+                        </div>
+                        <div class="achievement-text">
+                            <div class="achievement-level">{{ ui.game.level }} {{ gameResults.maxLevel }}: {{ ui.game.levels[gameResults.maxLevel - 1] }}</div>
+                            <div class="achievement-desc">{{ ui.game.difficulties[gameResults.difficultyKey] }} {{ ui.game.difficultyLevel }}</div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="gameResults.isNewRecord" class="new-record-banner">
+                        🏆 {{ ui.game.newRecord }} 🏆
+                    </div>
+                </div>
+                
+                <!-- Feedback Section -->
+                <div class="feedback-section">
+                    <div class="feedback-message">{{ ui.game.resultsFeedback[gameResults.feedbackIndex] }}</div>
+                    <div class="tips-section">
+                        <div class="tips-header">💡 {{ ui.game.learningTipsHeader }}</div>
+                        <div class="tips-text">{{ ui.game.learningTips[gameResults.tipCategory] }}</div>
+                    </div>
+                    <div v-if="gameResults.recommendationData" class="difficulty-recommendation" @click="applyRecommendedDifficulty()">
+                        <div class="recommendation-text">{{ formatRecommendationText(gameResults.recommendationData) }}</div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="results-actions">
+                    <button class="play-again-btn" @click="closeResults(); startGame();">
+                        🔄 {{ ui.game.playAgain }}
+                    </button>
+                    <button class="view-stats-btn" @click="closeResults(); activeTab = 'game'; showGameStats = true;">
+                        📊 {{ ui.game.viewStats }}
+                    </button>
+                    <button class="back-to-menu-btn" @click="closeResults(); gameDifficulty = null;">
+                        🏠 {{ ui.game.backToMenu }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="version-help-container">
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/clockeroo" class="version" target="_blank" title="Se prosjektet på GitHub">v1.13.0</a>
+        
+        <!-- Language Selector -->
+        <div class="language-selector">
+            <button class="language-toggle" @click="showLanguageMenu = !showLanguageMenu" @mouseenter="showLanguageMenu = true">
+                <span class="current-language-flag">{{ currentUILanguage === 'no' ? '🇳🇴' : '🇬🇧' }}</span>
+                <span class="language-arrow">{{ showLanguageMenu ? '▲' : '▼' }}</span>
+            </button>
+            <div class="language-menu" :class="{ visible: showLanguageMenu }" @mouseenter="showLanguageMenu = true" @mouseleave="showLanguageMenu = false">
+                <button 
+                    class="language-option" 
+                    :class="{ active: currentUILanguage === 'no' }"
+                    @click="setUILanguage('no')"
+                >
+                    🇳🇴 Norsk
+                </button>
+                <button 
+                    class="language-option" 
+                    :class="{ active: currentUILanguage === 'en' }"
+                    @click="setUILanguage('en')"
+                >
+                    🇬🇧 English
+                </button>
+            </div>
+        </div>
+        
+        <!-- Help tooltip for keyboard shortcuts (desktop only) -->
+        <div class="help-container" v-if="!isTouchDevice">
+            <button class="help-button" @click="showHelp = !showHelp" @mouseover="showHelp = true" @mouseleave="showHelp = false">?</button>
+            <div class="help-tooltip" :class="{ visible: showHelp }">
+                <h4>⌨️ {{ ui.help ? ui.help.title : 'Keyboard Shortcuts' }}</h4>
+                <div class="hotkey-list">
+                    <div class="hotkey-item">
+                        <span class="hotkey-keys">Q / A</span>
+                        <span class="hotkey-desc">{{ ui.help ? ui.help.hours : 'Timer ↑ / ↓' }}</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-keys">W / S</span>
+                        <span class="hotkey-desc">{{ ui.help ? ui.help.minutes : 'Minutter ↑ / ↓' }}</span>
+                    </div>
+                    <div class="hotkey-item">
+                        <span class="hotkey-keys">E / D</span>
+                        <span class="hotkey-desc">{{ ui.help ? ui.help.seconds : 'Sekunder ↑ / ↓' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
