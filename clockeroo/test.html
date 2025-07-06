@@ -191,6 +191,7 @@
                     <option value="no">Norwegian</option>
                     <option value="en-gb">English (UK)</option>
                     <option value="en-us">English (US)</option>
+                    <option value="ja">Japanese</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -260,6 +261,11 @@
         }
 
         function formatTimeExpression(minuteWord, targetHour, lang) {
+            // Special handling for Japanese - hour comes first
+            if (lang.use24Hour && lang.name && lang.name === '日本語') {
+                return `${lang.numbers[targetHour]} ${minuteWord}`;
+            }
+            
             if (lang.use24Hour) {
                 return `${minuteWord} ${lang.numbers[targetHour]}`;
             } else {
@@ -406,6 +412,16 @@
             { hour: 21, minute: 0, lang: 'no', expected: 'ni', category: 'hour', description: 'Norwegian 21 o\'clock (9 PM)' },
             { hour: 22, minute: 0, lang: 'no', expected: 'ti', category: 'hour', description: 'Norwegian 22 o\'clock (10 PM)' },
             { hour: 23, minute: 0, lang: 'no', expected: 'elleve', category: 'hour', description: 'Norwegian 23 o\'clock (11 PM)' },
+            
+            // Japanese test cases
+            { hour: 7, minute: 0, lang: 'ja', expected: '七 (nana) 時 (ji)', category: 'hour', description: 'Japanese 7 o\'clock' },
+            { hour: 12, minute: 0, lang: 'ja', expected: '十二 (jū-ni) 時 (ji)', category: 'hour', description: 'Japanese 12 o\'clock' },
+            { hour: 15, minute: 15, lang: 'ja', expected: '三 (san) 時十五分 (ji jū-go-fun)', category: 'minute', description: 'Japanese 3:15' },
+            { hour: 18, minute: 30, lang: 'ja', expected: '六 (roku) 時半 (ji-han)', category: 'minute', description: 'Japanese 6:30' },
+            { hour: 21, minute: 45, lang: 'ja', expected: '九 (ku) 時四十五分 (ji yon-jū-go-fun)', category: 'minute', description: 'Japanese 9:45' },
+            { hour: 0, minute: 0, lang: 'ja', expected: '十二 (jū-ni) 時 (ji)', category: 'hour', description: 'Japanese midnight' },
+            { hour: 13, minute: 5, lang: 'ja', expected: '一 (ichi) 時五分 (ji go-fun)', category: 'minute', description: 'Japanese 1:05 PM' },
+            { hour: 19, minute: 20, lang: 'ja', expected: '七 (nana) 時二十分 (ji ni-jup-pun)', category: 'minute', description: 'Japanese 7:20 PM' },
         ];
 
         let testResults = [];
@@ -507,11 +523,12 @@
         }
 
         function renderTestResults() {
-            const languages = ['no', 'en-gb', 'en-us'];
+            const languages = ['no', 'en-gb', 'en-us', 'ja'];
             const languageNames = {
                 'no': 'Norwegian (Norsk)',
                 'en-gb': 'English (UK)',
-                'en-us': 'English (US)'
+                'en-us': 'English (US)',
+                'ja': 'Japanese (日本語)'
             };
             
             let html = '';

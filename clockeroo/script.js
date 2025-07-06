@@ -738,7 +738,8 @@ const clockerooApp = {
       const generators = {
         'no': (hour, minute) => generateTimeString(hour, minute, 'no'),
         'en-gb': (hour, minute) => generateTimeString(hour, minute, 'en-gb'),
-        'en-us': (hour, minute) => generateTimeString(hour, minute, 'en-us')
+        'en-us': (hour, minute) => generateTimeString(hour, minute, 'en-us'),
+        'ja': (hour, minute) => generateTimeString(hour, minute, 'ja')
       };
 
       const generator = generators[currentLanguage.value];
@@ -783,6 +784,11 @@ const clockerooApp = {
     }
 
     function formatTimeExpression(minuteWord, targetHour, lang) {
+      // Special handling for Japanese - hour comes first
+      if (lang.use24Hour && lang.name && lang.name === '日本語') {
+        return `${lang.numbers[targetHour]} ${minuteWord}`;
+      }
+      
       if (lang.use24Hour) {
         return `${minuteWord} ${lang.numbers[targetHour]}`;
       } else {
