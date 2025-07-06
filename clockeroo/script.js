@@ -1635,8 +1635,8 @@ const clockerooApp = {
       
       let availableArea;
       if (isPortrait) {
-        // Controls at bottom - estimate controls height
-        const controlsHeight = Math.min(250, viewport.height * 0.3);
+        // Controls at bottom - use actual CSS values: height: 35vh; min-height: 200px;
+        const controlsHeight = Math.max(200, viewport.height * 0.35);
         availableArea = {
           width: viewport.width,
           height: viewport.height - controlsHeight,
@@ -1644,8 +1644,8 @@ const clockerooApp = {
           centerY: (viewport.height - controlsHeight) / 2
         };
       } else {
-        // Controls at side - estimate controls width  
-        const controlsWidth = Math.min(400, viewport.width * 0.35);
+        // Controls at side - use actual CSS value: width: 330px;
+        const controlsWidth = 330;
         availableArea = {
           width: viewport.width - controlsWidth,
           height: viewport.height,
@@ -1658,12 +1658,6 @@ const clockerooApp = {
       document.documentElement.style.setProperty('--calculated-center-x', `${availableArea.centerX}px`);
       document.documentElement.style.setProperty('--calculated-center-y', `${availableArea.centerY}px`);
       document.documentElement.style.setProperty('--is-portrait', isPortrait ? '1' : '0');
-      
-      console.log('Clock position calculated:', {
-        isPortrait,
-        availableArea,
-        viewport
-      });
     }
 
     // Debounced resize handler for better performance
