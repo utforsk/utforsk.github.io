@@ -376,6 +376,7 @@ const clockerooApp = {
     const gameShowResults = ref(false);
     const gameResults = ref(null); // Store game results
     const showGameStats = ref(false); // Show statistics within game tab
+    const showDeleteButtons = ref(false); // Show delete buttons on scores (for parents)
     const gameStats = ref({
       topScores: [], // Array of {score, date, difficulty}
       gamesPlayed: 0,
@@ -1232,10 +1233,35 @@ const clockerooApp = {
       gameFeedbackType.value = '';
       activeTab.value = 'game';
       
+      // Reset all visibility settings to prevent cheating
+      resetVisibilityForGame();
+      
       // Disable live time during game
       liveTime.disableLiveTime();
       
       generateGameQuestion();
+    }
+    
+    function resetToDefaultValues() {
+      // Reset all visibility controls and cover size to their default values
+      // These values match the initial ref() declarations (lines 341-357)
+      hourVisible.value = true;
+      minuteVisible.value = true;
+      secondVisible.value = true;
+      handValuesVisible.value = false;
+      hourTicksVisible.value = true;
+      minuteTicksVisible.value = true;
+      digitalTimeVisible.value = false;
+      timeDescriptionVisible.value = false;
+      hourNumbersVisible.value = true;
+      minuteNumbersVisible.value = false;
+      timePeriodVisible.value = true;
+      coverSize.value = 93;
+    }
+    
+    function resetVisibilityForGame() {
+      // Reset to default values to prevent cheating
+      resetToDefaultValues();
     }
     
     function showHint() {
@@ -1350,16 +1376,17 @@ const clockerooApp = {
       const newScore = {
         score: finalScore,
         date: currentDateString,
-        difficulty: gameDifficulty.value
+        difficulty: gameDifficulty.value,
+        language: currentLanguage.value
       };
       
       // Add to top scores and sort
       gameStats.value.topScores.push(newScore);
       gameStats.value.topScores.sort((a, b) => b.score - a.score);
       
-      // Keep only top 3
-      if (gameStats.value.topScores.length > 3) {
-        gameStats.value.topScores = gameStats.value.topScores.slice(0, 3);
+      // Keep only top 5
+      if (gameStats.value.topScores.length > 5) {
+        gameStats.value.topScores = gameStats.value.topScores.slice(0, 5);
       }
       
       // Calculate performance analytics based on THIS game only
@@ -1489,13 +1516,8 @@ const clockerooApp = {
     }
     
     function restoreNormalVisibility() {
-      // Restore original visibility settings
-      hourNumbersVisible.value = true;
-      minuteNumbersVisible.value = false;
-      hourTicksVisible.value = true;
-      minuteTicksVisible.value = true;
-      secondVisible.value = true;
-      handValuesVisible.value = false;
+      // Restore to default values after game ends
+      resetToDefaultValues();
     }
     
     function saveGameStats() {
@@ -1568,6 +1590,31 @@ const clockerooApp = {
       }
       
       return '';
+    }
+    
+    // Language flag helper function
+    function getLanguageFlag(languageCode) {
+      if (!languageCode) return '🏳️'; // fallback flag
+      const language = timeLanguages[languageCode];
+      return language ? language.flag : '🏳️';
+    }
+    
+    // Toggle delete buttons visibility (for parents)
+    function toggleDeleteButtons() {
+      showDeleteButtons.value = !showDeleteButtons.value;
+    }
+    
+    // Delete individual score
+    function deleteScore(index) {
+      gameStats.value.topScores.splice(index, 1);
+      saveGameStats();
+    }
+    
+    // Auto-hide delete buttons when leaving stats
+    function hideDeleteButtonsOnTabChange() {
+      if (!showGameStats.value) {
+        showDeleteButtons.value = false;
+      }
     }
 
     // Clock centering calculation
@@ -1719,6 +1766,13 @@ const clockerooApp = {
     // Modern Vue approach for event listeners
     useEventListener(window, 'resize', handleResize);
     useEventListener(document, 'keydown', handleGlobalKeydown);
+    
+    // Hide delete buttons when leaving stats view
+    watch(showGameStats, (newValue) => {
+      if (!newValue) {
+        showDeleteButtons.value = false;
+      }
+    });
 
     // Watch for changes
     watch([currentHour, currentMinute, currentSecond], () => {
@@ -1785,6 +1839,7 @@ const clockerooApp = {
       gameShowResults,
       gameResults,
       showGameStats,
+      showDeleteButtons,
       gameStats,
 
       // Template refs
@@ -1840,6 +1895,8 @@ const clockerooApp = {
       closeResults,
       applyRecommendedDifficulty,
       resetHighScores,
+      toggleDeleteButtons,
+      deleteScore,
       
       // Helper functions
       getDifficultyKey,
@@ -1848,6 +1905,7 @@ const clockerooApp = {
       getDetailedDate,
       formatFriendlyDate,
       formatRecommendationText,
+      getLanguageFlag,
 
       // Expose constants for template
       GAME_DIFFICULTIES,

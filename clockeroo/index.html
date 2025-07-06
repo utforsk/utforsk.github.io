@@ -83,7 +83,7 @@
         <div class="control-tabs">
             <button class="tab-btn" :class="{ active: activeTab === 'time', disabled: gameMode }" :disabled="gameMode" @click="activeTab = 'time'">{{ ui.tabs.time }}</button>
             <button class="tab-btn" :class="{ active: activeTab === 'visibility', disabled: gameMode }" :disabled="gameMode" @click="activeTab = 'visibility'">{{ ui.tabs.visibility }}</button>
-            <button class="tab-btn" :class="{ active: activeTab === 'language', disabled: gameMode }" :disabled="gameMode" @click="activeTab = 'language'">{{ ui.tabs.language }}</button>
+            <button class="tab-btn" :class="{ active: activeTab === 'language' }" @click="activeTab = 'language'">{{ ui.tabs.language }}</button>
             <button class="tab-btn" :class="{ active: activeTab === 'game' }" @click="activeTab = 'game'">🎮 {{ ui.game.gameTab }}</button>
         </div>
 
@@ -169,12 +169,13 @@
             </div>
 
 
-            <div class="language-section">
+            <div class="language-section" v-show="!gameMode">
                 <h4>{{ ui.languages.timeLanguage }}</h4>
                 <div class="language-buttons">
                     <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'no' }" @click="currentLanguage = 'no'">🇳🇴 Norsk</button>
                     <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'en-gb' }" @click="currentLanguage = 'en-gb'">🇬🇧 English (UK)</button>
                     <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'en-us' }" @click="currentLanguage = 'en-us'">🇺🇸 English (US)</button>
+                    <button class="language-btn time-language-btn" :class="{ active: currentLanguage === 'ja' }" @click="currentLanguage = 'ja'">🇯🇵 日本語</button>
                 </div>
             </div>
 
@@ -201,6 +202,7 @@
                     class="game-sub-btn" 
                     :class="{ active: showGameStats }" 
                     @click="showGameStats = true"
+                    @dblclick="toggleDeleteButtons"
                 >
                     📊 {{ ui.game.statsButton }}
                 </button>
@@ -243,7 +245,9 @@
                             <span class="score-rank">#{{ index + 1 }}</span>
                             <span class="score-points">{{ score.score }}p</span>
                             <span class="score-difficulty">{{ ui.game.difficulties[score.difficulty] }}</span>
+                            <span class="score-language">{{ getLanguageFlag(score.language) }}</span>
                             <span class="score-date" :title="score.detailedDate">{{ score.friendlyDate }}</span>
+                            <button v-show="showDeleteButtons" class="delete-score-btn" @click="deleteScore(index)">🗑️</button>
                         </div>
                     </div>
                     
@@ -371,7 +375,9 @@
                             <span class="score-difficulty-badge" :class="'diff-' + score.difficulty">
                                 {{ getDifficultyIcon(score.difficulty) }} {{ ui.game.difficulties[score.difficulty] }}
                             </span>
+                            <span class="score-language-badge">{{ getLanguageFlag(score.language) }}</span>
                             <span class="score-date-full" :title="score.detailedDate">{{ score.friendlyDate }}</span>
+                            <button v-show="showDeleteButtons" class="delete-score-btn-expanded" @click="deleteScore(index)">🗑️</button>
                         </div>
                     </div>
                 </div>
@@ -489,7 +495,7 @@
     </div>
 
     <div class="version-help-container">
-        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/clockeroo" class="version" target="_blank" title="Se prosjektet på GitHub">v1.13.4</a>
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/clockeroo" class="version" target="_blank" title="Se prosjektet på GitHub">v1.15.0</a>
         
         <!-- Language Selector -->
         <div class="language-selector">

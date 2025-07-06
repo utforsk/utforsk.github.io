@@ -2757,3 +2757,73 @@ body {
         font-size: 36px;
     }
 }
+
+/* High score language flags and delete buttons */
+.score-language {
+    font-size: 12px;
+    color: #666;
+    min-width: 25px;
+    text-align: center;
+}
+
+.score-language-badge {
+    font-size: 14px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.delete-score-btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-score-btn:hover {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    transform: scale(1.1);
+}
+
+.delete-score-btn-expanded {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+}
+
+.delete-score-btn-expanded:hover {
+    background: linear-gradient(135deg, #d32f2f, #b71c1c);
+    transform: scale(1.1);
+}
+
+/* Adjust score item layout for new elements */
+.score-item {
+    display: grid;
+    grid-template-columns: 30px 50px 1fr 25px 60px 20px;
+    gap: 6px;
+    align-items: center;
+    padding: 4px 6px;
+    margin-bottom: 4px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 4px;
+    font-size: 10px;
+}
