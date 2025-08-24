@@ -167,17 +167,19 @@ const GAME_DIFFICULTIES = {
     pointMultiplier: 1,
     showTextTime: false,
     answerFormat: 'digital',
-    hintsAllowed: 3
+    hintsAllowed: 3,
+    taskTypes: ['read'] // Only read the clock
   },
   medium: {
-    icon: '🟡', 
+    icon: '🟡',
     maxScore: 80,
     minLevel: 3,
     maxLevel: 7,
     pointMultiplier: 2,
     showTextTime: false,
     answerFormat: 'mixed',
-    hintsAllowed: 2
+    hintsAllowed: 2,
+    taskTypes: ['read'] // Only read the clock
   },
   hard: {
     icon: '🔴',
@@ -187,7 +189,8 @@ const GAME_DIFFICULTIES = {
     pointMultiplier: 3,
     showTextTime: false,
     answerFormat: 'text',
-    hintsAllowed: 1
+    hintsAllowed: 1,
+    taskTypes: ['read', 'read', 'set', 'set'] // Both read and set the clock, with more set tasks
   }
 };
 
@@ -383,6 +386,10 @@ const clockerooApp = {
       totalCorrect: 0,
       lastPlayed: null
     });
+    const gameTaskType = ref('read'); // 'read' or 'set'
+    const gameCorrectTime = ref(null); // For 'set' tasks
+    
+
     // Modern Vue reactive touch device detection
     const isTouchDevice = computed(() => {
       return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -1119,71 +1126,60 @@ const clockerooApp = {
     }
     
     function generateGameQuestion() {
-      const level = gameLevel.value;
-      const difficulty = GAME_DIFFICULTIES[gameDifficulty.value];
-      const correctTime = generateRandomTime(level);
-      
-      // Set clock to show the time
-      currentHour.value = correctTime.hour;
-      currentMinute.value = correctTime.minute;
-      currentSecond.value = 0;
-      updateClock();
-      
-      // Apply level visibility settings
-      applyLevelVisibility(level);
-      
-      // Determine answer format based on difficulty
-      const answerFormat = difficulty.answerFormat;
-      const useTextFormat = answerFormat === 'text' || (answerFormat === 'mixed' && Math.random() > 0.5);
-      
-      // Generate multiple choice answers
-      const answers = [];
-      const correctAnswer = formatTimeForGame(correctTime.hour, correctTime.minute, useTextFormat);
-      answers.push({ text: correctAnswer, correct: true });
-      
-      // Generate 3 wrong answers
-      for (let i = 0; i < 3; i++) {
-        let wrongTime;
-        let wrongAnswer;
-        let attempts = 0;
-        do {
-          wrongTime = generateRandomTime(level);
-          wrongAnswer = formatTimeForGame(wrongTime.hour, wrongTime.minute, useTextFormat);
-          attempts++;
-          // Prevent infinite loops
-          if (attempts > 50) {
-            // Fallback: create a simple different time
-            wrongTime = {
-              hour: (correctTime.hour % 12) + 1,
-              minute: (correctTime.minute + 15) % 60
-            };
-            wrongAnswer = formatTimeForGame(wrongTime.hour, wrongTime.minute, useTextFormat);
-            break;
-          }
-        } while (
-          (wrongTime.hour === correctTime.hour && wrongTime.minute === correctTime.minute) ||
-          wrongAnswer === correctAnswer ||
-          answers.some(a => a.text === wrongAnswer)
-        );
-        
-        answers.push({ 
-          text: wrongAnswer, 
-          correct: false 
-        });
-      }
-      
-      // Shuffle answers
-      for (let i = answers.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [answers[i], answers[j]] = [answers[j], answers[i]];
-      }
-      
-      gameQuestion.value = uiLanguages[currentUILanguage.value].game.question;
-      gameAnswers.value = answers;
-      
-      // Debug logging to verify answer generation
-      console.log('Generated answers:', answers);
-      console.log('Correct answer:', correctAnswer);
+        const level = gameLevel.value;
+        const difficulty = GAME_DIFFICULTIES[gameDifficulty.value];
+        const taskTypes = difficulty.taskTypes;
+        gameTaskType.value = taskTypes[Math.floor(Math.random() * taskTypes.length)];
+
+        const time = generateRandomTime(level);
+        gameCorrectTime.value = time;
+
+        applyLevelVisibility(level);
+
+        if (gameTaskType.value === 'read') {
+            // --- Read the clock task (existing logic) ---
+            currentHour.value = time.hour;
+            currentMinute.value = time.minute;
+            currentSecond.value = 0;
+            updateClock();
+
+            const answerFormat = difficulty.answerFormat;
+            const useTextFormat = answerFormat === 'text' || (answerFormat === 'mixed' && Math.random() > 0.5);
+
+            const answers = [];
+            const correctAnswer = formatTimeForGame(time.hour, time.minute, useTextFormat);
+            answers.push({ text: correctAnswer, correct: true });
+
+            for (let i = 0; i < 3; i++) {
+                let wrongTime, wrongAnswer, attempts = 0;
+                do {
+                    wrongTime = generateRandomTime(level);
+                    wrongAnswer = formatTimeForGame(wrongTime.hour, wrongTime.minute, useTextFormat);
+                    if (++attempts > 50) break;
+                } while (wrongAnswer === correctAnswer || answers.some(a => a.text === wrongAnswer));
+                answers.push({ text: wrongAnswer, correct: false });
+            }
+
+            for (let i = answers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [answers[i], answers[j]] = [answers[j], answers[i]];
+            }
+            gameQuestion.value = ui.value.game.question;
+            gameAnswers.value = answers;
+        } else {
+            // --- Set the clock task (new logic) ---
+            const answerFormat = difficulty.answerFormat;
+            const useTextFormat = answerFormat === 'text' || (answerFormat === 'mixed' && Math.random() > 0.5);
+            const timeString = formatTimeForGame(time.hour, time.minute, useTextFormat);
+            gameQuestion.value = ui.value.game.questionSetTime.replace('{time}', timeString);
+            gameAnswers.value = []; // No multiple choice
+
+            // Reset clock to a neutral position (e.g., 12:00) for the user to set
+            currentHour.value = 12;
+            currentMinute.value = 0;
+            currentSecond.value = 0;
+            updateClock();
+        }
     }
     
     function formatTimeForGame(hour, minute, useTextFormat = false) {
@@ -1279,94 +1275,64 @@ const clockerooApp = {
     }
     
     function answerQuestion(selectedAnswer) {
-      // Prevent multiple clicks/double processing
-      if (!gameMode.value || gameAnswerProcessing.value) {
-        console.log('Game not active or processing, ignoring answer');
-        return;
-      }
-      
-      // Set processing flag
-      gameAnswerProcessing.value = true;
-      
-      // Reset hint display for next question
-      gameShowingHint.value = false;
-      
-      // Debug logging to track the issue
-      console.log('Answer clicked:', selectedAnswer);
-      console.log('Is correct?', selectedAnswer.correct);
-      console.log('Questions left before:', gameQuestionsLeft.value);
-      console.log('Lives before:', gameLives.value);
-      console.log('Score before:', gameScore.value);
-      
-      // Always decrease questions left - every answer counts as one question
-      gameQuestionsLeft.value--;
-      
-      if (selectedAnswer.correct === true) {
-        console.log('Processing CORRECT answer');
-        
-        // Correct answer - calculate points
-        const levelConfig = GAME_LEVELS[gameLevel.value - 1];
-        const difficulty = GAME_DIFFICULTIES[gameDifficulty.value];
-        
-        // Variable points: basePoints * pointMultiplier
-        const points = levelConfig.basePoints * difficulty.pointMultiplier;
-        gameScore.value += points;
-        
-        gameStats.value.totalCorrect++;
-        gameCorrectThisGame.value++;
-        
-        // Show positive feedback
-        const encouragements = uiLanguages[currentUILanguage.value].game.encouragements;
-        gameFeedbackMessage.value = encouragements[Math.floor(Math.random() * encouragements.length)];
-        gameFeedbackType.value = 'correct';
-        
-        // Level up on correct answer (if possible) - but only occasionally to avoid rapid swings
-        if (Math.random() < 0.3 && gameLevel.value < difficulty.maxLevel) {
-          gameLevel.value++;
+        if (gameAnswerProcessing.value) return;
+        processAnswer(selectedAnswer.correct);
+    }
+
+    function checkSetTimeAnswer() {
+        if (gameAnswerProcessing.value) return;
+        const correctTimeInMinutes = gameCorrectTime.value.hour * 60 + gameCorrectTime.value.minute;
+        const userTimeInMinutes = currentHour.value * 60 + currentMinute.value;
+
+        const difference = Math.abs(correctTimeInMinutes - userTimeInMinutes);
+
+        // Allow a 2-minute leeway
+        const isCorrect = difference <= 2;
+        processAnswer(isCorrect);
+    }
+
+    function processAnswer(isCorrect) {
+        gameAnswerProcessing.value = true;
+        gameShowingHint.value = false;
+        gameQuestionsLeft.value--;
+
+        if (isCorrect) {
+            const levelConfig = GAME_LEVELS[gameLevel.value - 1];
+            const difficulty = GAME_DIFFICULTIES[gameDifficulty.value];
+            gameScore.value += levelConfig.basePoints * difficulty.pointMultiplier;
+            gameStats.value.totalCorrect++;
+            gameCorrectThisGame.value++;
+            
+            const encouragements = ui.value.game.encouragements;
+            gameFeedbackMessage.value = encouragements[Math.floor(Math.random() * encouragements.length)];
+            gameFeedbackType.value = 'correct';
+
+            if (Math.random() < 0.3 && gameLevel.value < difficulty.maxLevel) {
+                gameLevel.value++;
+            }
+        } else {
+            const gentleEncouragements = ui.value.game.gentleEncouragements;
+            gameFeedbackMessage.value = gentleEncouragements[Math.floor(Math.random() * gentleEncouragements.length)];
+            gameFeedbackType.value = 'wrong';
+            
+            const difficulty = GAME_DIFFICULTIES[gameDifficulty.value];
+            if (Math.random() < 0.5 && gameLevel.value > difficulty.minLevel) {
+                gameLevel.value--;
+            }
+            gameLives.value--;
         }
-        
-      } else {
-        console.log('Processing WRONG answer - moving to next question');
-        
-        // Show gentle, encouraging feedback for wrong answers
-        const gentleEncouragements = uiLanguages[currentUILanguage.value].game.gentleEncouragements;
-        gameFeedbackMessage.value = gentleEncouragements[Math.floor(Math.random() * gentleEncouragements.length)];
-        gameFeedbackType.value = 'wrong';
-        
-        // Wrong answer - level down occasionally (but not below minLevel)
-        const difficulty = GAME_DIFFICULTIES[gameDifficulty.value];
-        if (Math.random() < 0.5 && gameLevel.value > difficulty.minLevel) {
-          gameLevel.value--;
+
+        setTimeout(() => { gameFeedbackMessage.value = ''; }, 2000);
+
+        if (gameLives.value <= 0 || gameQuestionsLeft.value <= 0) {
+            endGame();
+            return;
         }
-        
-        gameLives.value--;
-        
-        // Check if game over due to no lives
-        if (gameLives.value <= 0) {
-          endGame();
-          return;
-        }
-      }
-      
-      // Hide feedback after 2 seconds
-      setTimeout(() => {
-        gameFeedbackMessage.value = '';
-      }, 2000);
-      
-      // Check if game over due to no questions left
-      if (gameQuestionsLeft.value <= 0) {
-        console.log('Game ending: no questions left');
-        endGame();
-        return;
-      }
-      
-      console.log('Generating next question, questions left:', gameQuestionsLeft.value);
-      
-      // Clear processing flag before generating next question
-      setTimeout(() => {
-        gameAnswerProcessing.value = false;
-        generateGameQuestion();
-      }, 100);
+
+        setTimeout(() => {
+            gameAnswerProcessing.value = false;
+            generateGameQuestion();
+        }, 1000);
     }
     
     function endGame() {
@@ -1675,7 +1641,6 @@ const clockerooApp = {
       }, 100);
     }
 
-
     // Global hotkey handler
     function handleGlobalKeydown(e) {
       // Don't handle hotkeys if we're editing a field
@@ -1841,6 +1806,7 @@ const clockerooApp = {
       showGameStats,
       showDeleteButtons,
       gameStats,
+      gameTaskType,
 
       // Template refs
       clock,
@@ -1883,7 +1849,6 @@ const clockerooApp = {
       handleTabNavigation,
       setTheme,
       setUILanguage,
-      setUILanguage,
       
       // Game functions
       selectDifficulty,
@@ -1891,6 +1856,7 @@ const clockerooApp = {
       startGame,
       showHint,
       answerQuestion,
+      checkSetTimeAnswer,
       endGame,
       closeResults,
       applyRecommendedDifficulty,

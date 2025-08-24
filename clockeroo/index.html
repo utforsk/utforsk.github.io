@@ -337,7 +337,7 @@
                         </div>
                     </div>
                     
-                    <div class="game-answers">
+                    <div class="game-answers" v-if="gameTaskType === 'read'">
                         <button 
                             v-for="(answer, index) in gameAnswers" 
                             :key="index"
@@ -346,6 +346,29 @@
                             @click="answerQuestion(answer)"
                         >
                             {{ answer.text }}
+                        </button>
+                    </div>
+
+                    <div class="game-set-time-controls" v-if="gameTaskType === 'set'">
+                        <div class="time-control-group">
+                            <button class="control-btn" @mousedown="startPress(() => adjustHour(-1))" @mouseup="stopPress" @mouseleave="stopPress">-</button>
+                            <span class="control-label">{{ ui.game.hoursLabel }}</span>
+                            <button class="control-btn" @mousedown="startPress(() => adjustHour(1))" @mouseup="stopPress" @mouseleave="stopPress">+</button>
+                        </div>
+                        <div class="time-control-group">
+                            <button class="control-btn" @mousedown="startPress(() => adjustMinute(-1))" @mouseup="stopPress" @mouseleave="stopPress">-</button>
+                            <span class="control-label">{{ ui.game.minutesLabel }}</span>
+                            <button class="control-btn" @mousedown="startPress(() => adjustMinute(1))" @mouseup="stopPress" @mouseleave="stopPress">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="game-answers" v-if="gameTaskType === 'set'">
+                        <button 
+                            class="answer-btn check-answer-btn"
+                            :disabled="gameAnswerProcessing"
+                            @click="checkSetTimeAnswer"
+                        >
+                            {{ ui.game.checkAnswerButton }}
                         </button>
                     </div>
                     
@@ -495,7 +518,7 @@
     </div>
 
     <div class="version-help-container">
-        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/clockeroo" class="version" target="_blank" title="Se prosjektet på GitHub">v1.15.3</a>
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/clockeroo" class="version" target="_blank" title="Se prosjektet på GitHub">v1.16.0</a>
         
         <!-- Language Selector -->
         <div class="language-selector">
