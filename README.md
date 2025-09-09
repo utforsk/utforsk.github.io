@@ -73,6 +73,22 @@ Built using AI with guidance from a human who still sometimes misreads analog cl
 - 📊 **Progress tracking** with statistics and performance recommendations
 - 🌐 **Browser-based** - no installation required
 
+### [`txt-cleaner`](https://utforsk.github.io/txt-cleaner)
+
+> ✅ **Status: Available**  
+> Try it now at [utforsk.github.io/txt-cleaner](https://utforsk.github.io/txt-cleaner)  
+> 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[txt-cleaner]%20Issue%3A%20&labels=txt-cleaner)
+
+A simple and elegant tool to quickly clean and transform text directly in your browser.  
+Perfect for developers, writers, and anyone who needs to tidy up text snippets without a full-fledged editor.
+
+- 🧼 **Live Transformation:** See your cleaned text update in real-time as you type.
+- 🧩 **Modular Filters:** Easily toggle cleaning modules like trimming whitespace or replacing special characters.
+- ✨ **Character Visualization:** An optional mode to highlight special characters like tabs, non-breaking spaces, and em-dashes.
+- ↔️ **Resizable Panes:** Adjust the input and output panels to your liking with a draggable splitter.
+- 📱 **Responsive Design:** Works seamlessly on both desktop and mobile devices.
+- 🌐 **Browser-based** - no installation required.
+
 More projects will be added here as ideas escape from the prompt buffer.
 
 ---

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>txt-cleaner</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="title">
+                <div class="title-line">
+                    <h1>txt-cleaner</h1>
+                    <a href="https://github.com/utforsk/utforsk.github.io/tree/main/txt-cleaner" target="_blank" class="version-link">v1.0.0</a>
+                </div>
+                <p>A simple tool to clean and transform text.</p>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="panel input-panel">
+                <div class="editor-wrapper">
+                    <textarea v-model="inputText" @scroll="syncScroll" placeholder="Paste your text here..."></textarea>
+                    <div class="editor-backdrop" v-html="visualInput"></div>
+                </div>
+            </div>
+
+            <div class="splitter" id="splitter"></div>
+
+            <div class="panel output-panel">
+                 <div class="editor-wrapper">
+                    <div class="editor-backdrop" v-html="visualOutput"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Desktop Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-section">
+                    <h2>Global Settings</h2>
+                    <button @click="toggleSpecialChars" :class="{ active: showSpecialChars }" class="global-setting-btn">Show Special Characters</button>
+                </div>
+                <div class="sidebar-section">
+                    <h2>Modules</h2>
+                    <input type="text" v-model="moduleFilter" placeholder="Filter modules..." class="filter-input">
+                    <div class="module-list">
+                        <div v-for="(module, key) in filteredModules" :key="key" class="module-toggle">
+                            <input type="checkbox" :id="key" :value="key" v-model="enabledModules">
+                            <label :for="key">{{ module.name }}</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h2>Examples</h2>
+                    <ul class="example-list">
+                        <li v-for="example in examples" @click="pasteExample(example.text)">{{ example.name }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="controls">
+                <button @click="copyOutput" :disabled="!outputText" :class="{ 'copy-success': copySuccess }">Copy to Clipboard</button>
+            </div>
+        </aside>
+
+        <!-- Mobile UI -->
+        <div class="mobile-ui">
+            <div v-if="activeMobileOverlay" class="mobile-overlay-backdrop" @click="activeMobileOverlay = null"></div>
+            
+            <div class="mobile-overlay" :class="{ 'is-active': activeMobileOverlay === 'settings' }">
+                <div class="mobile-overlay-header"><h3>Settings</h3><button @click="activeMobileOverlay = null">Close</button></div>
+                <div class="mobile-overlay-content">
+                    <button @click="toggleSpecialChars" :class="{ active: showSpecialChars }" class="global-setting-btn">Show Special Characters</button>
+                </div>
+            </div>
+
+            <div class="mobile-overlay" :class="{ 'is-active': activeMobileOverlay === 'modules' }">
+                <div class="mobile-overlay-header"><h3>Modules</h3><button @click="activeMobileOverlay = null">Close</button></div>
+                <div class="mobile-overlay-content">
+                    <input type="text" v-model="moduleFilter" placeholder="Filter modules..." class="filter-input">
+                    <div class="module-list">
+                        <div v-for="(module, key) in filteredModules" :key="key" class="module-toggle">
+                            <input type="checkbox" :id="key" :value="key" v-model="enabledModules">
+                            <label :for="key">{{ module.name }}</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mobile-overlay" :class="{ 'is-active': activeMobileOverlay === 'examples' }">
+                <div class="mobile-overlay-header"><h3>Examples</h3><button @click="activeMobileOverlay = null">Close</button></div>
+                <div class="mobile-overlay-content">
+                    <ul class="example-list">
+                        <li v-for="example in examples" @click="pasteExample(example.text); activeMobileOverlay = null;">{{ example.name }}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <footer class="mobile-footer">
+                <button @click="toggleMobileOverlay('settings')" :class="{ active: activeMobileOverlay === 'settings' }">Settings</button>
+                <button @click="toggleMobileOverlay('modules')" :class="{ active: activeMobileOverlay === 'modules' }">Modules</button>
+                <button @click="toggleMobileOverlay('examples')" :class="{ active: activeMobileOverlay === 'examples' }">Examples</button>
+            </footer>
+        </div>
+
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
