@@ -72,7 +72,41 @@ header .title p { font-size: 0.9rem; color: var(--text-color-dark); white-space:
 
 .output-panel .editor-backdrop { background-color: #222222; position: relative; }
 
-.special-char { background-color: var(--special-char-bg); color: #f0f0f0; border-radius: 3px; padding: 0 2px; cursor: help; }
+.special-char {
+    background-color: var(--special-char-bg);
+    color: #f0f0f0;
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+/* Set cursor only for the output panel by default */
+.output-panel .special-char {
+    cursor: help;
+}
+
+/* Tooltip mode for the input panel */
+.input-panel .editor-wrapper.tooltip-mode {
+    cursor: help;
+}
+
+.input-panel .editor-wrapper.tooltip-mode .editor-backdrop {
+    z-index: 3; /* Bring to front to make chars hoverable */
+}
+
+.custom-tooltip {
+    position: fixed;
+    display: none;
+    background-color: #111;
+    color: #eee;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    pointer-events: none; /* Important */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    border: 1px solid #444;
+    z-index: 9999;
+}
 
 .splitter { flex-basis: 8px; flex-shrink: 0; background-color: var(--border-color); cursor: col-resize; position: relative; transition: background-color 0.2s; }
 .splitter:hover { background-color: var(--accent-color); }

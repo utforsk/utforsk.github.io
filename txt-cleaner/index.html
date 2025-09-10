@@ -13,7 +13,7 @@
             <div class="title">
                 <div class="title-line">
                     <h1>txt-cleaner</h1>
-                    <a href="https://github.com/utforsk/utforsk.github.io/tree/main/txt-cleaner" target="_blank" class="version-link">v1.0.0</a>
+                    <a href="https://github.com/utforsk/utforsk.github.io/tree/main/txt-cleaner" target="_blank" class="version-link">v1.1.0</a>
                 </div>
                 <p>A simple tool to clean and transform text.</p>
             </div>
@@ -21,7 +21,7 @@
 
         <main class="container">
             <div class="panel input-panel">
-                <div class="editor-wrapper">
+                <div class="editor-wrapper" :class="{ 'tooltip-mode': tooltipModeActive }">
                     <textarea v-model="inputText" @scroll="syncScroll" placeholder="Paste your text here..."></textarea>
                     <div class="editor-backdrop" v-html="visualInput"></div>
                 </div>
@@ -105,6 +105,7 @@
             </footer>
         </div>
 
+        <div id="tooltip" class="custom-tooltip" style="display: none; position: fixed; z-index: 9999;"></div>
     </div>
     <script type="module" src="script.js"></script>
 </body>

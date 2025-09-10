@@ -2,9 +2,25 @@ const { createApp } = Vue;
 import { modules } from './modules/index.js';
 
 const specialCharMap = {
-    '—': { name: 'em-dash (U+2014)' },
-    '\t': { name: 'tab (U+0009)', symbol: '→' },
-    '\u00A0': { name: 'non-breaking space (U+00A0)', symbol: '·' }
+    // Common special characters
+    '—': { name: 'Em Dash (U+2014)' },
+    '–': { name: 'En Dash (U+2013)' },
+    '…': { name: 'Horizontal Ellipsis (U+2026)' },
+
+    // Whitespace characters
+    '\t': { name: 'Tab (U+0009)', symbol: '→' },
+    '\u00A0': { name: 'Non-Breaking Space (U+00A0)', symbol: '·' },
+    '\u2000': { name: 'En Quad (U+2000)', symbol: ' ' },
+    '\u2001': { name: 'Em Quad (U+2001)', symbol: ' ' },
+    '\u2002': { name: 'En Space (U+2002)', symbol: ' ' },
+    '\u2003': { name: 'Em Space (U+2003)', symbol: ' ' },
+    '\u2009': { name: 'Thin Space (U+2009)', symbol: ' ' },
+
+    // Zero-width characters
+    '\u200B': { name: 'Zero Width Space (U+200B)', symbol: '&#8203;' },
+    '\u200C': { name: 'Zero Width Non-Joiner (U+200C)', symbol: '&#8204;' },
+    '\u200D': { name: 'Zero Width Joiner (U+200D)', symbol: '&#8205;' },
+    '\uFEFF': { name: 'Zero Width No-Break Space / BOM (U+FEFF)', symbol: '&#65279;' },
 };
 
 createApp({
@@ -17,6 +33,7 @@ createApp({
             showSpecialChars: false,
             activeMobileOverlay: null, // 'modules', 'examples', or null
             copySuccess: false,
+            tooltipModeActive: false,
             examples: [
                 {
                     name: 'Trailing Spaces & Tabs',
@@ -65,14 +82,41 @@ createApp({
             if (!this.showSpecialChars) {
                 return escapedText;
             }
-            
-            let result = escapedText;
-            for (const char in specialCharMap) {
-                const info = specialCharMap[char];
-                const displayChar = info.symbol || char;
-                const replacement = `<span class="special-char" title="${info.name}">${displayChar}</span>`;
-                result = result.replace(new RegExp(char, 'g'), replacement);
+
+            const dynamicCharMap = { ...specialCharMap };
+
+            // Fallback for other non-printable/non-ASCII characters
+            const regex = /[^ -~\n\r]/g;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                const char = match[0];
+                if (!dynamicCharMap[char]) {
+                    const charCode = char.charCodeAt(0);
+                    dynamicCharMap[char] = {
+                        name: `Character (U+${charCode.toString(16).toUpperCase().padStart(4, '0')})`
+                    };
+                }
             }
+
+            let result = escapedText;
+
+            // Create a single regex for all replacements for efficiency
+            const allChars = Object.keys(dynamicCharMap)
+                .map(c => c.replace(/[.*+?^${}()|[\\]/g, '\\$&'))
+                .join('|');
+            
+            if (!allChars) {
+                return result;
+            }
+            
+            const replaceRegex = new RegExp(allChars, 'g');
+
+            result = result.replace(replaceRegex, (char) => {
+                const info = dynamicCharMap[char];
+                const displayChar = info.symbol || char;
+                return `<span class="special-char" title="${info.name}">${displayChar}</span>`;
+            });
+
             return result;
         },
         copyOutput() {
@@ -110,6 +154,55 @@ createApp({
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        },
+        handleMouseOver(e) {
+            if (e.target.classList.contains('special-char')) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.textContent = e.target.getAttribute('title');
+                tooltip.style.display = 'block';
+                this.updateTooltipPosition(e);
+            }
+        },
+        handleMouseOut(e) {
+            if (e.target.classList.contains('special-char')) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+            }
+        },
+        handleMouseMove(e) {
+            const tooltip = document.getElementById('tooltip');
+            if (tooltip.style.display === 'block') {
+                this.updateTooltipPosition(e);
+            }
+        },
+        updateTooltipPosition(e) {
+            const tooltip = document.getElementById('tooltip');
+            this.$nextTick(() => {
+                const tooltipRect = tooltip.getBoundingClientRect();
+                let x = e.clientX + 15;
+                let y = e.clientY + 15;
+
+                if (x + tooltipRect.width > window.innerWidth) {
+                    x = e.clientX - tooltipRect.width - 15;
+                }
+                if (y + tooltipRect.height > window.innerHeight) {
+                    y = e.clientY - tooltipRect.height - 15;
+                }
+
+                tooltip.style.left = `${x}px`;
+                tooltip.style.top = `${y}px`;
+            });
+        },
+        handleKeyDown(e) {
+            if (e.key === 'Control') {
+                e.preventDefault();
+                this.tooltipModeActive = true;
+            }
+        },
+        handleKeyUp(e) {
+            if (e.key === 'Control') {
+                this.tooltipModeActive = false;
+            }
         }
     },
     mounted() {
@@ -170,5 +263,19 @@ createApp({
 
         splitter.addEventListener('mousedown', startDrag);
         splitter.addEventListener('touchstart', startDrag, { passive: false });
+
+        // Tooltip event listeners
+        const mainContainer = document.querySelector('.container');
+        mainContainer.addEventListener('mouseover', this.handleMouseOver);
+        mainContainer.addEventListener('mouseout', this.handleMouseOut);
+        mainContainer.addEventListener('mousemove', this.handleMouseMove);
+
+        // Tooltip mode listeners
+        window.addEventListener('keydown', this.handleKeyDown);
+        window.addEventListener('keyup', this.handleKeyUp);
+    },
+    beforeUnmount() {
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('keyup', this.handleKeyUp);
     }
 }).mount('#app');
