@@ -3,9 +3,9 @@ export default {
     function: (text) => {
         if (!text) return '';
 
-        // This regex looks for lines that are enclosed in |...| characters,
-        // which is common in text copied from k9s (and alike), and removes the border.
-        const borderRegex = /^\s*\|\s*(.*?)\s*\|\s*$/;
+        // This regex looks for lines that are enclosed in box-drawing characters
+        // and removes the outer frame characters.
+        const borderRegex = /^\s*[|│┃║┆┇┊┋╎╏┌┐└┘┏┓┗┛├┤┬┴┼┣┫┳┻╋]\s*(.*?)\s*[|│┃║┆┇┊┋╎╏┌┐└┘┏┓┗┛├┤┬┴┼┣┫┳┻╋]\s*$/;
 
         return text.split('\n').map(line => {
             const match = line.match(borderRegex);
