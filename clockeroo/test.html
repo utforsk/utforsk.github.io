@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clockeroo Time Expression Test Suite</title>
+    <title>Clockeroo Test Suite</title>
     <style>
         body {
             font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
             font-size: 12px;
             margin: 20px;
             background-color: #f5f5f5;
+            scroll-behavior: smooth;
         }
         .container {
             max-width: 1200px;
@@ -19,10 +20,36 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        h1 {
+        h1, h2 {
             color: #333;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+        .jump-menu {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .jump-menu h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        .jump-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: inline-block;
+        }
+        .jump-menu li {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        .jump-menu a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
         }
         .summary {
             display: grid;
@@ -140,6 +167,7 @@
         }
         .language-section {
             margin-bottom: 40px;
+            padding-top: 20px; /* For jump menu spacing */
         }
         .language-header {
             background: #e9ecef;
@@ -164,16 +192,22 @@
 </head>
 <body>
     <div class="container">
-        <h1>🕐 Clockeroo Time Expression Test Suite</h1>
+        <h1>🕐 Clockeroo Test Suite</h1>
+
+        <nav class="jump-menu">
+            <h3>Jump To:</h3>
+            <ul>
+                <li><a href="#time-expr-tests">Time Expression Tests</a></li>
+                <li><a href="#game-logic-tests">Game Logic Tests</a></li>
+            </ul>
+        </nav>
         
         <div class="critical-tests">
             <h3>⚠️ Critical Bug Tests</h3>
-            <p>These tests specifically target the bugs that were reported:</p>
+            <p>These tests specifically target known bugs, both past and present.</p>
             <ul>
-                <li><strong>13:20</strong> should be "ti på halv to" (NOT "ti på halv ett")</li>
-                <li><strong>16:25</strong> should be "fem på halv fem" (NOT "fem på halv tre")</li>
-                <li>All similar "halv" expressions must reference the correct hour</li>
-                <li>All English "to" expressions must reference the correct hour</li>
+                <li><strong>Time Expressions:</strong> "halv" and "to" expressions must reference the correct upcoming hour.</li>
+                <li><strong>Game Logic:</strong> Ambiguous times (e.g., "ten past ten") must accept both 12h and 24h format answers.</li>
             </ul>
         </div>
 
@@ -215,14 +249,25 @@
             </div>
         </div>
 
-        <div id="testResults">
-            <!-- Test results will be populated here -->
+        <div id="time-expr-tests">
+            <h2>Time Expression Tests</h2>
+            <div id="testResults">
+                <!-- Test results will be populated here -->
+            </div>
+        </div>
+
+        <div id="game-logic-tests" class="language-section">
+            <h2>Game Logic Tests</h2>
+            <p>These tests check the game's answer validation logic, especially for ambiguous times.</p>
+            <table id="gameTestResults">
+                <!-- Game test results will be populated here -->
+            </table>
         </div>
     </div>
 
     <script src="languages.js"></script>
     <script>
-        // Import time generation logic from the main application
+        // --- Time Expression Logic (Copied from main app) ---
         function generateTimeString(hour, minute, languageCode) {
             const lang = timeLanguages[languageCode];
             const roundedMinute = Math.round(minute / 5) * 5;
@@ -261,7 +306,6 @@
         }
 
         function formatTimeExpression(minuteWord, targetHour, lang) {
-            // Special handling for Japanese - hour comes first
             if (lang.use24Hour && lang.name && lang.name === '日本語') {
                 return `${lang.numbers[targetHour]} ${minuteWord}`;
             }
@@ -275,8 +319,35 @@
             }
         }
 
-        // Comprehensive test cases covering all edge cases
-        const testCases = [
+        // --- Game Logic (Copied from main app) ---
+        function checkSetTimeAnswer_test(correctTime, userHour, userMinute) {
+            // This is the NEW fixed logic that handles 12h/24h ambiguity
+            const correct12Hour = correctTime.hour; // 1-12
+            const correctMinute = correctTime.minute;
+            const user24Hour = userHour; // 0-23
+            
+            const candidateHours = [];
+            if (correct12Hour === 12) {
+                // "12" from generator can mean midnight (0) or noon (12)
+                candidateHours.push(0, 12);
+            } else {
+                // e.g., "2" from generator can mean 2 and 14
+                candidateHours.push(correct12Hour, correct12Hour + 12);
+            }
+
+            let isMatch = false;
+            for (const candidateHour of candidateHours) {
+                // Check if hours match and minutes are within leeway
+                if (user24Hour === candidateHour && Math.abs(userMinute - correctMinute) <= 2) {
+                    isMatch = true;
+                    break;
+                }
+            }
+            return isMatch;
+        }
+
+        // --- Test Data ---
+        const timeExpressionTestCases = [
             // Critical bug cases - these were the original reported issues
             { hour: 13, minute: 20, lang: 'no', expected: 'ti på halv to', category: 'critical', description: 'Original bug: 13:20 Norwegian' },
             { hour: 16, minute: 25, lang: 'no', expected: 'fem på halv fem', category: 'critical', description: 'Original bug: 16:25 Norwegian' },
@@ -424,75 +495,70 @@
             { hour: 19, minute: 20, lang: 'ja', expected: '七 (nana) 時二十分 (ji ni-jup-pun)', category: 'minute', description: 'Japanese 7:20 PM' },
         ];
 
-        let testResults = [];
+        const gameLogicTestCases = [
+            { description: 'BUG: Should accept 22:10 for "ten past ten"', category: 'critical', correctTime: { hour: 10, minute: 10 }, userSetTime: { hour: 22, minute: 10 }, expected: true },
+            { description: 'Should accept 10:10 for "ten past ten"', category: 'ambiguous', correctTime: { hour: 10, minute: 10 }, userSetTime: { hour: 10, minute: 10 }, expected: true },
+            { description: 'Should NOT accept 23:10 for "ten past ten"', category: 'ambiguous', correctTime: { hour: 10, minute: 10 }, userSetTime: { hour: 23, minute: 10 }, expected: false },
+            { description: 'BUG: Should accept 14:00 for "two o\'clock"', category: 'critical', correctTime: { hour: 2, minute: 0 }, userSetTime: { hour: 14, minute: 0 }, expected: true },
+            { description: 'Should accept 02:00 for "two o\'clock"', category: 'ambiguous', correctTime: { hour: 2, minute: 0 }, userSetTime: { hour: 2, minute: 0 }, expected: true },
+            { description: 'BUG: Should accept 00:15 for "quarter past twelve"', category: 'critical', correctTime: { hour: 12, minute: 15 }, userSetTime: { hour: 0, minute: 15 }, expected: true },
+            { description: 'Should accept 12:15 for "quarter past twelve"', category: 'ambiguous', correctTime: { hour: 12, minute: 15 }, userSetTime: { hour: 12, minute: 15 }, expected: true },
+            { description: 'Should NOT accept 13:15 for "quarter past twelve"', category: 'ambiguous', correctTime: { hour: 12, minute: 15 }, userSetTime: { hour: 13, minute: 15 }, expected: false },
+        ];
+
+        // --- Test Runner Logic ---
+        let allTestResults = [];
 
         function runAllTests() {
             console.log('Running all tests...');
-            testResults = [];
+            allTestResults = [];
             
-            testCases.forEach((testCase, index) => {
-                const result = runSingleTest(testCase, index);
-                testResults.push(result);
-            });
+            runTimeExpressionTests();
+            runGameLogicTests();
             
             updateSummary();
-            renderTestResults();
             console.log('All tests completed');
         }
 
-        function runSingleTest(testCase, index) {
+        function runTimeExpressionTests() {
+            const results = [];
+            timeExpressionTestCases.forEach((testCase, index) => {
+                const result = runSingleTimeExpressionTest(testCase, index);
+                results.push(result);
+                allTestResults.push(result);
+            });
+            renderTimeExpressionResults(results);
+        }
+
+        function runGameLogicTests() {
+            const results = [];
+            gameLogicTestCases.forEach(testCase => {
+                const actual = checkSetTimeAnswer_test(testCase.correctTime, testCase.userSetTime.hour, testCase.userSetTime.minute);
+                const passed = actual === testCase.expected;
+                const result = { ...testCase, actual, passed, type: 'game' };
+                results.push(result);
+                allTestResults.push(result);
+            });
+            renderGameLogicTestResults(results);
+        }
+
+        function runSingleTimeExpressionTest(testCase, index) {
             const { hour, minute, lang, expected, category, description } = testCase;
-            
-            try {
-                const actual = generateTimeString(hour, minute, lang);
-                const passed = actual === expected;
-                const roundedMinute = Math.round(minute / 5) * 5;
-                const langConfig = timeLanguages[lang];
-                const usesNextHour = langConfig.useNextHourForMinutes && langConfig.useNextHourForMinutes.includes(roundedMinute);
-                
-                const debugInfo = {
-                    roundedMinute,
-                    usesNextHour,
-                    targetHour: usesNextHour ? (hour + 1) % 24 : hour % 24,
-                    nextHourMinutes: langConfig.useNextHourForMinutes || [],
-                    minuteWord: langConfig.minuteWords[roundedMinute] || 'N/A'
-                };
-                
-                return {
-                    index,
-                    hour,
-                    minute,
-                    lang,
-                    expected,
-                    actual,
-                    passed,
-                    category,
-                    description,
-                    debugInfo
-                };
-            } catch (error) {
-                return {
-                    index,
-                    hour,
-                    minute,
-                    lang,
-                    expected,
-                    actual: `ERROR: ${error.message}`,
-                    passed: false,
-                    category,
-                    description,
-                    debugInfo: { error: error.message }
-                };
-            }
+            const actual = generateTimeString(hour, minute, lang);
+            const passed = actual === expected;
+            const roundedMinute = Math.round(minute / 5) * 5;
+            const langConfig = timeLanguages[lang];
+            const usesNextHour = langConfig.useNextHourForMinutes && langConfig.useNextHourForMinutes.includes(roundedMinute);
+            const debugInfo = { roundedMinute, usesNextHour, targetHour: usesNextHour ? (hour + 1) % 24 : hour % 24 };
+            return { index, hour, minute, lang, expected, actual, passed, category, description, debugInfo, type: 'time' };
         }
 
         function updateSummary() {
-            const total = testResults.length;
-            const passed = testResults.filter(r => r.passed).length;
+            const total = allTestResults.length;
+            const passed = allTestResults.filter(r => r.passed).length;
             const failed = total - passed;
             const passRate = total > 0 ? (passed / total * 100).toFixed(1) : 0;
-            
-            const criticalTests = testResults.filter(r => r.category === 'critical');
+            const criticalTests = allTestResults.filter(r => r.category === 'critical');
             const criticalPassed = criticalTests.filter(r => r.passed).length;
             const criticalFailed = criticalTests.length - criticalPassed;
             
@@ -518,11 +584,10 @@
                     <div class="stat-label">Critical Tests</div>
                 </div>
             `;
-            
             document.getElementById('summary').innerHTML = summaryHTML;
         }
 
-        function renderTestResults() {
+        function renderTimeExpressionResults(results) {
             const languages = ['no', 'en-gb', 'en-us', 'ja'];
             const languageNames = {
                 'no': 'Norwegian (Norsk)',
@@ -534,7 +599,7 @@
             let html = '';
             
             languages.forEach(lang => {
-                const langTests = testResults.filter(r => r.lang === lang);
+                const langTests = results.filter(r => r.lang === lang);
                 if (langTests.length === 0) return;
                 
                 html += `
@@ -558,7 +623,7 @@
                 `;
                 
                 langTests.forEach(result => {
-                    const { hour, minute, expected, actual, passed, category, description, debugInfo } = result;
+                    const { index, hour, minute, expected, actual, passed, category, description, debugInfo } = result;
                     const digitalTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
                     const debugText = JSON.stringify(debugInfo, null, 2);
                     
@@ -585,14 +650,41 @@
             document.getElementById('testResults').innerHTML = html;
         }
 
+        function renderGameLogicTestResults(results) {
+            const table = document.getElementById('gameTestResults');
+            let tbody = '<tbody>';
+            results.forEach(result => {
+                const { description, correctTime, userSetTime, expected, actual, passed } = result;
+                tbody += `
+                    <tr class="test-row ${passed ? 'passed' : 'failed'}">
+                        <td>${description}</td>
+                        <td>Correct: ${JSON.stringify(correctTime)}, User: ${JSON.stringify(userSetTime)}</td>
+                        <td class="expected">${expected}</td>
+                        <td class="actual">${actual}</td>
+                        <td><span class="status ${passed ? 'pass' : 'fail'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+                    </tr>
+                `;
+            });
+            tbody += '</tbody>';
+            table.innerHTML = `
+                <thead>
+                    <tr><th>Description</th><th>Inputs</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+                </thead>
+                ${tbody}
+            `;
+        }
+
         function filterTests() {
             const languageFilter = document.getElementById('languageFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
             const timeFilter = document.getElementById('timeFilter').value;
             
-            const rows = document.querySelectorAll('.test-row');
+            const timeExprRows = document.querySelectorAll('#testResults .test-row');
+            const gameLogicRows = document.querySelectorAll('#gameTestResults .test-row');
             
-            rows.forEach(row => {
+            const allRows = [...timeExprRows, ...gameLogicRows];
+            
+            allRows.forEach(row => {
                 let show = true;
                 
                 if (languageFilter && row.dataset.lang !== languageFilter) {
@@ -628,10 +720,7 @@
             });
         }
 
-        // Run tests automatically on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            runAllTests();
-        });
+        document.addEventListener('DOMContentLoaded', () => runAllTests());
     </script>
 </body>
 </html>

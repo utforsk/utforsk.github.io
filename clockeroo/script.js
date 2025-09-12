@@ -1281,14 +1281,33 @@ const clockerooApp = {
 
     function checkSetTimeAnswer() {
         if (gameAnswerProcessing.value) return;
-        const correctTimeInMinutes = gameCorrectTime.value.hour * 60 + gameCorrectTime.value.minute;
-        const userTimeInMinutes = currentHour.value * 60 + currentMinute.value;
 
-        const difference = Math.abs(correctTimeInMinutes - userTimeInMinutes);
+        const correct12Hour = gameCorrectTime.value.hour; // 1-12
+        const correctMinute = gameCorrectTime.value.minute;
+        const user24Hour = currentHour.value; // 0-23
+        const userMinute = currentMinute.value;
 
-        // Allow a 2-minute leeway
-        const isCorrect = difference <= 2;
-        processAnswer(isCorrect);
+        // Candidate correct hours in 24-hour format
+        const candidateHours = [];
+        if (correct12Hour === 12) {
+            // "12" can mean midnight (0) or noon (12)
+            candidateHours.push(0, 12);
+        } else {
+            // e.g., "2" can mean 2 and 14
+            candidateHours.push(correct12Hour, correct12Hour + 12);
+        }
+
+        // Check if the user's time matches any of the valid candidates
+        let isMatch = false;
+        for (const candidateHour of candidateHours) {
+            // Check if hours match and minutes are within leeway
+            if (user24Hour === candidateHour && Math.abs(userMinute - correctMinute) <= 2) {
+                isMatch = true;
+                break;
+            }
+        }
+
+        processAnswer(isMatch);
     }
 
     function processAnswer(isCorrect) {
