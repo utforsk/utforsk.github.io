@@ -32,7 +32,7 @@
     --hour-number-bg: rgba(255, 255, 255, 0.9);
     --hour-number-border: #3498db;
     --hour-number-text: #2c3e50;
-    --minute-number-text: #7f8c8d;
+    --minute-number-text: #2c3e50;
 
     --hour-tick: #2c3e50;
     --minute-tick: #7f8c8d;
@@ -83,7 +83,7 @@
     --hour-number-bg: rgba(240, 248, 255, 0.95);
     --hour-number-border: #4682B4;
     --hour-number-text: #2F4F4F;
-    --minute-number-text: #4682B4;
+    --minute-number-text: #2F4F4F;
 
     --hour-tick: #2F4F4F;
     --minute-tick: #4682B4;
@@ -128,7 +128,7 @@
     --hour-number-bg: rgba(255, 248, 220, 0.95);
     --hour-number-border: #CD853F;
     --hour-number-text: #8B4513;
-    --minute-number-text: #CD853F;
+    --minute-number-text: #8B4513;
 
     --hour-tick: #8B4513;
     --minute-tick: #CD853F;
@@ -173,7 +173,7 @@
     --hour-number-bg: rgba(245, 255, 250, 0.95);
     --hour-number-border: #32CD32;
     --hour-number-text: #2E8B57;
-    --minute-number-text: #228B22;
+    --minute-number-text: #2E8B57;
 
     --hour-tick: #2E8B57;
     --minute-tick: #228B22;
@@ -218,7 +218,7 @@
     --hour-number-bg: rgba(248, 248, 255, 0.95);
     --hour-number-border: #8A2BE2;
     --hour-number-text: #483D8B;
-    --minute-number-text: #6A5ACD;
+    --minute-number-text: #483D8B;
 
     --hour-tick: #483D8B;
     --minute-tick: #6A5ACD;
@@ -263,7 +263,7 @@
     --hour-number-bg: rgba(255, 240, 245, 0.95);
     --hour-number-border: #FF69B4;
     --hour-number-text: #C71585;
-    --minute-number-text: #FF1493;
+    --minute-number-text: #C71585;
 
     --hour-tick: #C71585;
     --minute-tick: #FF1493;
@@ -469,7 +469,7 @@ body {
     color: var(--minute-number-text);
     font-weight: bold;
     z-index: 9;
-    text-shadow: 0 0 3px rgba(255, 255, 255, 0.9), 0 0 6px rgba(255, 255, 255, 0.6);
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.9), 0 0 5px rgba(255, 255, 255, 0.7);
 }
 
 .hour-tick {

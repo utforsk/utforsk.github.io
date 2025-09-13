@@ -399,9 +399,6 @@ const clockerooApp = {
     const editingField = ref(null); // 'hour', 'minute', 'second', or null
     const editingValue = ref('');
 
-    // Reactive trigger for clock positioning updates
-    const clockKey = ref(0);
-
     // Template refs
     const clock = ref(null);
     const innerCover = ref(null);
@@ -499,31 +496,22 @@ const clockerooApp = {
     // Computed properties for clock elements (modern Vue approach)
     const hourNumbers = computed(() => {
       try {
-        // Reactivity trigger - updates when clockKey changes
-        clockKey.value;
-
         const numbers = [];
-
-        // We need to calculate positions based on actual clock dimensions
-        const clockElement = clock.value;
-        if (!clockElement) return numbers;
-
-        const clockRect = clockElement.getBoundingClientRect();
-        const centerX = clockRect.width / 2;
-        const centerY = clockRect.height / 2;
-        const radius = Math.min(centerX, centerY) * CLOCK_CONSTANTS.HOUR_RADIUS_FACTOR;
+        // Calculate radius as a percentage of the clock's diameter
+        const radiusPercent = 100 * CLOCK_CONSTANTS.HOUR_RADIUS_FACTOR / 2;
 
         for (let i = 1; i <= 12; i++) {
           const angle = ((i * CLOCK_CONSTANTS.DEGREES_PER_HOUR) - 90) * (Math.PI / 180);
-          const x = centerX + radius * Math.cos(angle);
-          const y = centerY + radius * Math.sin(angle);
+          // Position from center (50%)
+          const xPercent = 50 + radiusPercent * Math.cos(angle);
+          const yPercent = 50 + radiusPercent * Math.sin(angle);
 
           numbers.push({
             value: i,
             id: `hour-${i}`,
             style: {
-              left: `${x}px`,
-              top: `${y}px`,
+              left: `${xPercent}%`,
+              top: `${yPercent}%`,
               transform: 'translate(-50%, -50%)',
               display: hourNumbersVisible.value ? 'flex' : 'none'
             }
@@ -537,76 +525,62 @@ const clockerooApp = {
     });
 
     const minuteNumbers = computed(() => {
-      // Reactivity trigger - updates when clockKey changes
-      clockKey.value;
+      try {
+        const numbers = [];
+        // Calculate radius as a percentage of the clock's diameter
+        const minuteRadiusPercent = 100 * CLOCK_CONSTANTS.MINUTE_RADIUS_FACTOR / 2;
 
-      const numbers = [];
-
-      // We need to calculate positions based on actual clock dimensions
-      const clockElement = clock.value;
-      if (!clockElement) return numbers;
-
-      const clockRect = clockElement.getBoundingClientRect();
-      const centerX = clockRect.width / 2;
-      const centerY = clockRect.height / 2;
-      const minuteRadius = Math.min(centerX, centerY) * CLOCK_CONSTANTS.MINUTE_RADIUS_FACTOR;
-
-      // Add minute 0 at the top
-      const angle0 = -90 * (Math.PI / 180);
-      const x0 = centerX + minuteRadius * Math.cos(angle0);
-      const y0 = centerY + minuteRadius * Math.sin(angle0);
-
-      numbers.push({
-        value: 0,
-        id: 'minute-0',
-        style: {
-          left: `${x0}px`,
-          top: `${y0}px`,
-          transform: 'translate(-50%, -50%)',
-          display: minuteNumbersVisible.value ? 'block' : 'none'
-        }
-      });
-
-      // Add minute numbers 5, 10, 15, etc.
-      for (let i = 5; i < 60; i += 5) {
-        const angle = ((i * CLOCK_CONSTANTS.DEGREES_PER_MINUTE) - 90) * (Math.PI / 180);
-        const x = centerX + minuteRadius * Math.cos(angle);
-        const y = centerY + minuteRadius * Math.sin(angle);
+        // Add minute 0 at the top
+        const angle0 = -90 * (Math.PI / 180);
+        const x0Percent = 50 + minuteRadiusPercent * Math.cos(angle0);
+        const y0Percent = 50 + minuteRadiusPercent * Math.sin(angle0);
 
         numbers.push({
-          value: i,
-          id: `minute-${i}`,
+          value: 0,
+          id: 'minute-0',
           style: {
-            left: `${x}px`,
-            top: `${y}px`,
+            left: `${x0Percent}%`,
+            top: `${y0Percent}%`,
             transform: 'translate(-50%, -50%)',
             display: minuteNumbersVisible.value ? 'block' : 'none'
           }
         });
+
+        // Add minute numbers 5, 10, 15, etc.
+        for (let i = 5; i < 60; i += 5) {
+          const angle = ((i * CLOCK_CONSTANTS.DEGREES_PER_MINUTE) - 90) * (Math.PI / 180);
+          const xPercent = 50 + minuteRadiusPercent * Math.cos(angle);
+          const yPercent = 50 + minuteRadiusPercent * Math.sin(angle);
+
+          numbers.push({
+            value: i,
+            id: `minute-${i}`,
+            style: {
+              left: `${xPercent}%`,
+              top: `${yPercent}%`,
+              transform: 'translate(-50%, -50%)',
+              display: minuteNumbersVisible.value ? 'block' : 'none'
+            }
+          });
+        }
+        return numbers;
+      } catch (error) {
+        console.warn('Error calculating minute numbers positions:', error);
+        return [];
       }
-      return numbers;
     });
 
     // Computed properties for clock ticks (modern Vue approach)
     const hourTicks = computed(() => {
-      // Reactivity trigger - updates when clockKey changes
-      clockKey.value;
-
       const ticks = [];
-
-      const clockElement = clock.value;
-      if (!clockElement) return ticks;
-
-      const clockRect = clockElement.getBoundingClientRect();
-      const radius = Math.min(clockRect.width, clockRect.height) / 2;
-      const tickHeight = radius * CLOCK_CONSTANTS.TICK_HEIGHT_FACTOR;
+      const tickHeightPercent = 50 * CLOCK_CONSTANTS.TICK_HEIGHT_FACTOR;
 
       // Create 12 hour ticks (i = 0 to 11)
       for (let i = 0; i < 12; i++) {
         ticks.push({
           id: `hour-tick-${i}`,
           style: {
-            height: `${tickHeight}px`,
+            height: `${tickHeightPercent}%`,
             marginLeft: '-2px', // Center the 4px width
             transform: `rotate(${i * CLOCK_CONSTANTS.DEGREES_PER_HOUR}deg)`,
             display: hourTicksVisible.value ? 'block' : 'none'
@@ -617,17 +591,8 @@ const clockerooApp = {
     });
 
     const minuteTicks = computed(() => {
-      // Reactivity trigger - updates when clockKey changes
-      clockKey.value;
-
       const ticks = [];
-
-      const clockElement = clock.value;
-      if (!clockElement) return ticks;
-
-      const clockRect = clockElement.getBoundingClientRect();
-      const radius = Math.min(clockRect.width, clockRect.height) / 2;
-      const tickHeight = radius * CLOCK_CONSTANTS.TICK_HEIGHT_FACTOR;
+      const tickHeightPercent = 50 * CLOCK_CONSTANTS.TICK_HEIGHT_FACTOR;
 
       // Create 60 minute ticks (i = 0 to 59)
       for (let i = 0; i < 60; i++) {
@@ -643,7 +608,7 @@ const clockerooApp = {
         ticks.push({
           id: `minute-tick-${i}`,
           style: {
-            height: `${tickHeight}px`,
+            height: `${tickHeightPercent}%`,
             marginLeft: '-1px', // Center the 2px width
             transform: `rotate(${i * CLOCK_CONSTANTS.DEGREES_PER_MINUTE}deg)`,
             display: display
@@ -655,46 +620,29 @@ const clockerooApp = {
 
     // Computed property for hand values positioning (modern Vue approach)
     const handValuesPositioned = computed(() => {
-      // Reactivity trigger - updates when clockKey or angles change
-      clockKey.value;
       const hourAngle = displayHourAngle.value;
       const minuteAngle = displayMinuteAngle.value;
       const secondAngle = displaySecondAngle.value;
 
-      const clockElement = clock.value;
-      if (!clockElement) {
-        return {
-          hour: { left: '0px', top: '0px' },
-          minute: { left: '0px', top: '0px' },
-          second: { left: '0px', top: '0px' }
-        };
-      }
-
-      const clockRect = clockElement.getBoundingClientRect();
-      const centerX = clockRect.width / 2;
-      const centerY = clockRect.height / 2;
-
-      // Calculate positions on hands with different distances to avoid overlap
-      // Hour hand closest to center, second hand furthest out (exact same as original)
-      const hourRadius = Math.min(centerX, centerY) * CLOCK_CONSTANTS.HOUR_HAND_VALUE_RADIUS;
-      const minuteRadius = Math.min(centerX, centerY) * CLOCK_CONSTANTS.MINUTE_HAND_VALUE_RADIUS;
-      const secondRadius = Math.min(centerX, centerY) * CLOCK_CONSTANTS.SECOND_HAND_VALUE_RADIUS;
+      const hourRadiusPercent = 100 * CLOCK_CONSTANTS.HOUR_HAND_VALUE_RADIUS / 2;
+      const minuteRadiusPercent = 100 * CLOCK_CONSTANTS.MINUTE_HAND_VALUE_RADIUS / 2;
+      const secondRadiusPercent = 100 * CLOCK_CONSTANTS.SECOND_HAND_VALUE_RADIUS / 2;
 
       const hourAngleRad = (hourAngle - 90) * (Math.PI / 180);
       const minuteAngleRad = (minuteAngle - 90) * (Math.PI / 180);
       const secondAngleRad = (secondAngle - 90) * (Math.PI / 180);
 
-      const hourX = centerX + hourRadius * Math.cos(hourAngleRad);
-      const hourY = centerY + hourRadius * Math.sin(hourAngleRad);
-      const minuteX = centerX + minuteRadius * Math.cos(minuteAngleRad);
-      const minuteY = centerY + minuteRadius * Math.sin(minuteAngleRad);
-      const secondX = centerX + secondRadius * Math.cos(secondAngleRad);
-      const secondY = centerY + secondRadius * Math.sin(secondAngleRad);
+      const hourXPercent = 50 + hourRadiusPercent * Math.cos(hourAngleRad);
+      const hourYPercent = 50 + hourRadiusPercent * Math.sin(hourAngleRad);
+      const minuteXPercent = 50 + minuteRadiusPercent * Math.cos(minuteAngleRad);
+      const minuteYPercent = 50 + minuteRadiusPercent * Math.sin(minuteAngleRad);
+      const secondXPercent = 50 + secondRadiusPercent * Math.cos(secondAngleRad);
+      const secondYPercent = 50 + secondRadiusPercent * Math.sin(secondAngleRad);
 
       return {
-        hour: { left: `${hourX}px`, top: `${hourY}px` },
-        minute: { left: `${minuteX}px`, top: `${minuteY}px` },
-        second: { left: `${secondX}px`, top: `${secondY}px` }
+        hour: { left: `${hourXPercent}%`, top: `${hourYPercent}%` },
+        minute: { left: `${minuteXPercent}%`, top: `${minuteYPercent}%` },
+        second: { left: `${secondXPercent}%`, top: `${secondYPercent}%` }
       };
     });
 
@@ -1655,7 +1603,6 @@ const clockerooApp = {
 
       // Debounce resize events by 100ms to prevent excessive recomputations
       resizeTimeout = setTimeout(() => {
-        clockKey.value++;
         calculateClockPosition(); // Recalculate position on resize
       }, 100);
     }
@@ -1732,7 +1679,6 @@ const clockerooApp = {
       setTimeout(() => {
         updateClock();
         // Trigger initial positioning
-        clockKey.value++;
         calculateClockPosition(); // Calculate initial position
         
         // Start live time by default
@@ -1803,7 +1749,6 @@ const clockerooApp = {
       isTouchDevice,
       editingField,
       editingValue,
-      clockKey,
       
       // Game state
       gameMode,
