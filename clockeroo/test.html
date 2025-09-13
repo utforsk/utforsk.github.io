@@ -249,6 +249,12 @@
             </div>
         </div>
 
+        <div id="debug-info-section" class="test-section">
+            <h2>Client & Storage Info</h2>
+            <div id="client-data"></div>
+            <div id="localstorage-data"></div>
+        </div>
+
         <div id="time-expr-tests">
             <h2>Time Expression Tests</h2>
             <div id="testResults">
@@ -511,6 +517,8 @@
 
         function runAllTests() {
             console.log('Running all tests...');
+            displayClientData();
+            displayLocalStorageData();
             allTestResults = [];
             
             runTimeExpressionTests();
@@ -721,6 +729,42 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => runAllTests());
+
+        function displayClientData() {
+            const dataDiv = document.getElementById('client-data');
+            dataDiv.innerHTML = `
+                <h3>Client Info</h3>
+                <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                <p><strong>Window Size:</strong> ${window.innerWidth} x ${window.innerHeight}</p>
+                <p><strong>Device Pixel Ratio:</strong> ${window.devicePixelRatio}</p>
+                <p><strong>Current Time:</strong> ${new Date().toLocaleString()}</p>
+            `;
+        }
+
+        function displayLocalStorageData() {
+            const dataDiv = document.getElementById('localstorage-data');
+            let html = '<h3>Local Storage Data</h3>';
+            if (localStorage.length === 0) {
+                html += '<p>No data found in local storage.</p>';
+            } else {
+                html += '<ul>';
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    const value = localStorage.getItem(key);
+                    html += `<li><strong>${key}:</strong><pre>${JSON.stringify(JSON.parse(value), null, 2)}</pre></li>`;
+                }
+                html += '</ul>';
+            }
+            html += '<button onclick="clearLocalStorage()">Clear Local Storage</button>';
+            dataDiv.innerHTML = html;
+        }
+
+        function clearLocalStorage() {
+            if (confirm('Are you sure you want to clear all local storage for this page?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
     </script>
 </body>
 </html>
