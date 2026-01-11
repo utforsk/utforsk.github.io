@@ -89,6 +89,21 @@ Perfect for developers, writers, and anyone who needs to tidy up text snippets w
 - 📱 **Responsive Design:** Works seamlessly on both desktop and mobile devices.
 - 🌐 **Browser-based** - no installation required.
 
+### [`ip6-what`](https://utforsk.github.io/ip6-what)
+
+> ✅ **Status: Available**
+> Try it now at [utforsk.github.io/ip6-what](https://utforsk.github.io/ip6-what)
+> 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[ip6-what]%20Issue%3A%20&labels=ip6-what)
+
+A comprehensive IPv6 address analyzer, subnet calculator, and reference guide.
+Designed to demystify IPv6 addresses, multicast scopes, and special prefixes for network engineers and learners.
+
+- 🔍 **Deep Analysis:** Break down any IPv6 address into its components (subnet, interface ID, flags, scope).
+- 📚 **Extensive Reference:** Built-in knowledge base of hundreds of special-purpose addresses, multicast groups, and RFCs.
+- 🛠️ **Subnet Calculator:** Visualize subnet capacity and breakdowns (e.g., how many /64s fit in a /48).
+- 📡 **Multicast Decoder:** Instantly identify multicast scope, flags (Transient, Rendezvous, etc.), and well-known group IDs.
+- 📱 **Responsive Design:** Works perfectly on desktop (with pinned reference sidebar) and mobile.
+
 More projects will be added here as ideas escape from the prompt buffer.
 
 ---
