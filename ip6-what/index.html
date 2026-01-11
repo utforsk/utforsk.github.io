@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPv6 What? - Analyze IPv6 Entities</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>IPv6 What?</h1>
+            <p>Analyze and understand IPv6 addresses, subnets, and more.</p>
+            <button id="ref-btn" class="ref-btn">Browse Reference & Examples</button>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <label for="ipv6-input" class="sr-only">Enter IPv6 Entity</label>
+                <input type="text" id="ipv6-input" placeholder="Enter an IPv6 address (e.g., 2001:db8::1)" autocomplete="off" spellcheck="false">
+            </section>
+
+            <!-- Old examples section removed -->
+
+            <section id="results-section" class="results-section hidden">
+                <!-- Results will be populated by JS -->
+                <div id="error-message" class="error-message hidden"></div>
+                <div id="results-content" class="results-content"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Built with <span class="heart">♥</span> using <code>ip-address</code></p>
+            <button id="debug-btn" class="debug-btn">Debug Info</button>
+            <pre id="debug-output" class="debug-output hidden"></pre>
+        </footer>
+    </div>
+    
+    <aside id="ref-panel" class="ref-panel">
+        <div class="ref-header">
+            <h2>IPv6 Reference</h2>
+            <div class="ref-controls">
+                <button id="ref-pin" class="ref-icon-btn" title="Pin Panel">📌</button>
+                <button id="ref-close" class="ref-icon-btn" title="Close">×</button>
+            </div>
+        </div>
+        <div class="ref-search-container">
+            <input type="text" id="ref-search" class="ref-search" placeholder="Filter reference list...">
+        </div>
+        <div id="ref-content" class="ref-content"></div>
+    </aside>
+    <div id="ref-overlay" class="ref-overlay"></div>
+
+    <script type="module" src="script.js"></script>
+    <div id="global-tooltip" class="row-description hidden"></div>
+</body>
+</html>

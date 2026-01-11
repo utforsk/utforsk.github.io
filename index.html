@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utforsk - Tools & Utilities</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --text-color: #333;
+            --card-bg: #ffffff;
+            --card-border: #e0e0e0;
+            --primary-color: #007bff;
+            --accent-color: #6610f2;
+            --hover-bg: #f8f9fa;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #e0e0e0;
+                --card-bg: #1e1e1e;
+                --card-border: #333;
+                --primary-color: #4da3ff;
+                --accent-color: #a170ff;
+                --hover-bg: #2d2d2d;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 40px 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .tool-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 25px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            background-color: var(--hover-bg);
+        }
+
+        .tool-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .tool-desc {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        footer {
+            margin-top: 60px;
+            text-align: center;
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Utforsk</h1>
+            <p>A collection of useful web tools and experiments.</p>
+        </header>
+
+        <div class="tools-grid">
+            <a href="/ip6-what/" class="tool-card">
+                <div class="tool-title">IPv6 What?</div>
+                <div class="tool-desc">Comprehensive IPv6 address analyzer, subnet calculator, and reference guide. Decode multicast flags, scopes, and special prefixes.</div>
+            </a>
+
+            <a href="/txt-cleaner/" class="tool-card">
+                <div class="tool-title">Text Cleaner</div>
+                <div class="tool-desc">Clean up text formatting, remove line breaks, fix indentation, and strip CLI artifacts. Useful for code snippets and logs.</div>
+            </a>
+
+            <a href="/clockeroo/" class="tool-card">
+                <div class="tool-title">Clockeroo</div>
+                <div class="tool-desc">A simple and elegant clock application or experiment.</div>
+            </a>
+
+        </div>
+
+        <footer>
+            <p>Hosted on GitHub Pages</p>
+        </footer>
+    </div>
+</body>
+</html>
