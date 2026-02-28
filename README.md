@@ -104,6 +104,22 @@ Designed to demystify IPv6 addresses, multicast scopes, and special prefixes for
 - 📡 **Multicast Decoder:** Instantly identify multicast scope, flags (Transient, Rendezvous, etc.), and well-known group IDs.
 - 📱 **Responsive Design:** Works perfectly on desktop (with pinned reference sidebar) and mobile.
 
+### [`uni-confuse`](https://utforsk.github.io/uni-confuse)
+
+> ✅ **Status: Available**
+> Try it now at [utforsk.github.io/uni-confuse](https://utforsk.github.io/uni-confuse)
+> 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[uni-confuse]%20Issue%3A%20&labels=uni-confuse)
+
+A Unicode confusables explorer that reveals how easily text can be spoofed using look-alike characters from different scripts.
+Type ASCII text and see it transformed into visually identical but technically different Unicode characters — the same trick used in phishing and domain spoofing attacks.
+
+- 🔤 **Live Confusing:** See your text converted to look-alike Unicode characters in real-time as you type.
+- 🎛️ **Fine-Tuned Control:** Adjust similarity (1-5) and intensity (0-100%) to control how aggressively characters are replaced.
+- 🔍 **Inspect Mode:** Paste suspicious text to detect hidden confusable characters with detailed analysis.
+- 🎨 **Color-Coded Analysis:** Instantly see which characters are ASCII (green), confusable (red), or other non-ASCII (yellow).
+- 📋 **Reference Table:** Browse all 522 BMP confusable variants across 78 ASCII characters with similarity scores.
+- 🌐 **Browser-based** - no installation required.
+
 More projects will be added here as ideas escape from the prompt buffer.
 
 ---

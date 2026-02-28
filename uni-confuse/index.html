@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uni-confuse</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <div class="title">
+                <div class="title-line">
+                    <h1>uni-confuse</h1>
+                    <a href="https://github.com/utforsk/utforsk.github.io/tree/main/uni-confuse" target="_blank" class="version-link">v1.2.0</a>
+                </div>
+                <p>Unicode confusables explorer &mdash; see how easily text can be spoofed</p>
+            </div>
+        </header>
+
+        <main class="container">
+            <!-- About section - at the top -->
+            <section class="info-section">
+                <div class="panel-header">
+                    <h2>About Unicode Confusables</h2>
+                    <button class="btn-small" @click="showInfo = !showInfo">{{ showInfo ? 'Hide' : 'Show' }}</button>
+                </div>
+                <div class="info-content" v-show="showInfo">
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <h3>What are confusables?</h3>
+                            <p>Unicode confusables (homoglyphs) are characters from different scripts that look identical or nearly identical to common ASCII characters. For example, Latin "a" (U+0061) and Cyrillic "\u0430" (U+0430) are visually the same but entirely different code points.</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>Why does this matter?</h3>
+                            <p>Confusables are used in phishing attacks, domain spoofing (IDN homograph attacks), bypassing content filters, and social engineering. A URL like "apple.com" can be forged using Cyrillic characters to look identical while pointing to a different server.</p>
+                        </div>
+                        <div class="info-card">
+                            <h3>Security implications</h3>
+                            <ul>
+                                <li>Phishing domains that visually mimic legitimate sites</li>
+                                <li>Bypassing keyword filters and blocklists</li>
+                                <li>Impersonation in usernames and display names</li>
+                                <li>Code obfuscation with look-alike identifiers</li>
+                                <li>Evading plagiarism detection systems</li>
+                            </ul>
+                        </div>
+                        <div class="info-card">
+                            <h3>How to use this tool</h3>
+                            <ul>
+                                <li><strong>Type text</strong> on the left and see it confused live on the right</li>
+                                <li><strong>Similarity</strong> controls how close the look-alikes must be (5 = nearly identical, 1 = all variants)</li>
+                                <li><strong>Intensity</strong> controls what percentage of characters get replaced</li>
+                                <li><strong>Inspect mode</strong> analyzes pasted text for hidden confusables</li>
+                                <li><strong>Regenerate</strong> picks new random variants</li>
+                            </ul>
+                        </div>
+                        <div class="info-card">
+                            <h3>Data source</h3>
+                            <p>Based on <a href="https://www.unicode.org/Public/security/8.0.0/confusables.txt" target="_blank">Unicode Consortium's confusables.txt</a> (v8.0.0), part of <a href="https://www.unicode.org/reports/tr39/" target="_blank">Unicode Technical Standard #39</a>.</p>
+                            <p class="info-note">Covers single-codepoint BMP confusables for printable ASCII. Characters that don't render in most browsers have been removed.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Text Panels: side by side -->
+            <div class="text-panels">
+                <!-- Your Text -->
+                <section class="panel text-panel">
+                    <div class="panel-header">
+                        <h2>Your Text</h2>
+                        <div class="panel-actions">
+                            <button class="btn-small" @click="pasteExample('security')">Security</button>
+                            <button class="btn-small" @click="pasteExample('url')">URLs</button>
+                            <button class="btn-small" @click="pasteExample('code')">Code</button>
+                            <button class="btn-small btn-clear" @click="clearInput">Clear</button>
+                        </div>
+                    </div>
+                    <textarea
+                        v-model="inputText"
+                        placeholder="Type or paste text here..."
+                        spellcheck="false"
+                    ></textarea>
+                </section>
+
+                <!-- Confused Preview -->
+                <section class="panel preview-panel">
+                    <div class="panel-header preview-header">
+                        <h2>Confused Preview</h2>
+                        <div class="panel-actions">
+                            <button class="btn-small" @click="regenerate" :disabled="!confusedText" title="Generate a new random variant">Regenerate</button>
+                            <button class="btn-small" @click="copyConfused" :disabled="!confusedText" :class="{ 'copy-success': copySuccess }">
+                                {{ copySuccess ? 'Copied!' : 'Copy' }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-body">
+                        <div class="preview-text" :class="{ empty: !confusedText }">{{ confusedText || 'Live preview appears here as you type...' }}</div>
+                        <div class="preview-readonly-badge">read-only</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-bar">
+                <div class="control-group">
+                    <label class="control-label">
+                        <span class="control-name">Similarity</span>
+                        <input type="range" v-model.number="similarity" min="1" max="5" step="1">
+                        <span class="control-value">{{ similarity }}/5 <span class="control-hint">{{ similarityLabel }}</span></span>
+                    </label>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">
+                        <span class="control-name">Intensity</span>
+                        <input type="range" v-model.number="intensity" min="0" max="100" step="5">
+                        <span class="control-value">{{ intensity }}%</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Character Analysis -->
+            <section class="analysis-section" v-if="textToAnalyze">
+                <div class="panel-header analysis-panel-header" :class="{ 'mode-inspect': analyzeMode === 'inspect' }">
+                    <h2>Character Analysis</h2>
+                    <div class="analysis-header-right">
+                        <div class="analysis-mode-toggle">
+                            <button
+                                class="mode-btn"
+                                :class="{ active: analyzeMode === 'confused' }"
+                                @click="setModeConfused"
+                                :disabled="!confusedText"
+                            >Confused output</button>
+                            <button
+                                class="mode-btn mode-btn-inspect"
+                                :class="{ active: analyzeMode === 'inspect' }"
+                                @click="setModeInspect"
+                                :disabled="!inputText"
+                            >Inspect your text</button>
+                        </div>
+                        <div class="analysis-stats">
+                            <span class="stat">{{ analysisStats.total }} chars</span>
+                            <span class="stat stat-ascii">{{ analysisStats.ascii }} ASCII</span>
+                            <span class="stat stat-confusable">{{ analysisStats.confusable }} confusables</span>
+                            <span class="stat stat-non-ascii" v-if="analysisStats.nonAscii > 0">{{ analysisStats.nonAscii }} other</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inspect mode banner -->
+                <div class="inspect-banner" v-if="analyzeMode === 'inspect'">
+                    <span class="inspect-icon">&#128270;</span>
+                    <span>
+                        Inspecting your pasted text for hidden confusable characters.
+                        <template v-if="analysisStats.confusable > 0">
+                            <strong>{{ analysisStats.confusable }} confusable character{{ analysisStats.confusable > 1 ? 's' : '' }} detected!</strong>
+                        </template>
+                        <template v-else>
+                            No confusable characters found &mdash; this text appears clean.
+                        </template>
+                    </span>
+                </div>
+
+                <div class="analysis-display">
+                    <div class="char-grid">
+                        <div
+                            v-for="(charInfo, idx) in analyzedChars"
+                            :key="idx"
+                            class="char-cell"
+                            :class="{
+                                'is-ascii': charInfo.isAscii,
+                                'is-confusable': charInfo.isConfusable,
+                                'is-non-ascii': !charInfo.isAscii && !charInfo.isConfusable,
+                                'is-space': charInfo.char === ' ',
+                                'is-newline': charInfo.char === '\n'
+                            }"
+                            :title="charInfo.isConfusable
+                                ? `${charInfo.unicodeName} looks like '${charInfo.mapsToAscii}' (U+${charInfo.mapsToHex}) \u2014 similarity ${charInfo.similarity}/5`
+                                : charInfo.unicodeName"
+                        >
+                            <span class="char-display" v-if="charInfo.char !== '\n'">{{ charInfo.char === ' ' ? '\u00B7' : charInfo.char }}</span>
+                            <span class="char-display newline-symbol" v-else>&crarr;</span>
+                            <span class="char-hex">{{ charInfo.hex }}</span>
+                            <span class="char-maps" v-if="charInfo.isConfusable">&rarr; {{ charInfo.mapsToAscii }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Decoded comparison -->
+                <div class="decoded-bar" v-if="analysisStats.confusable > 0">
+                    <span class="decoded-label">Decoded as ASCII:</span>
+                    <span class="decoded-text">{{ decodedText }}</span>
+                </div>
+            </section>
+
+            <!-- Reference Table -->
+            <section class="reference-section">
+                <div class="panel-header">
+                    <h2>Confusables Reference</h2>
+                    <div class="panel-actions">
+                        <button class="btn-small" :class="{ active: refFilter === 'intext' }" @click="refFilter = 'intext'" :disabled="charsInText.size === 0">In text</button>
+                        <span class="ref-divider"></span>
+                        <button class="btn-small" :class="{ active: refFilter === 'all' }" @click="refFilter = 'all'">All</button>
+                        <button class="btn-small" :class="{ active: refFilter === 'upper' }" @click="refFilter = 'upper'">A-Z</button>
+                        <button class="btn-small" :class="{ active: refFilter === 'lower' }" @click="refFilter = 'lower'">a-z</button>
+                        <button class="btn-small" :class="{ active: refFilter === 'digits' }" @click="refFilter = 'digits'">0-9</button>
+                        <button class="btn-small" :class="{ active: refFilter === 'symbols' }" @click="refFilter = 'symbols'">Symbols</button>
+                    </div>
+                </div>
+                <div class="reference-table-wrapper">
+                    <table class="reference-table">
+                        <thead>
+                            <tr>
+                                <th>ASCII</th>
+                                <th>Code</th>
+                                <th>#</th>
+                                <th>Confusable Variants</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="entry in filteredReference" :key="entry.codePoint">
+                                <td class="ref-ascii">{{ entry.char }}</td>
+                                <td class="ref-code">U+{{ entry.codePoint.toString(16).toUpperCase().padStart(4, '0') }}</td>
+                                <td class="ref-count">{{ entry.confusableCount }}</td>
+                                <td class="ref-variants">
+                                    <span
+                                        v-for="(variant, i) in getConfusableChars(entry.codePoint)"
+                                        :key="i"
+                                        class="variant-chip"
+                                        :class="'sim-' + variant.score"
+                                        :title="'U+' + variant.hex + ' (similarity ' + variant.score + '/5)'"
+                                    >
+                                        <span class="variant-char">{{ variant.char }}</span>
+                                        <span class="variant-hex">{{ variant.hex }}</span>
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="reference-empty" v-if="filteredReference.length === 0 && refFilter === 'intext'">
+                    Type some text above to see which characters have confusable variants.
+                </div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

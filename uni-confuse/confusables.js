@@ -1,0 +1,307 @@
+// Unicode Confusables Data
+// Source: https://www.unicode.org/Public/security/8.0.0/confusables.txt
+// Format: { asciiCodePoint: [[confusableCodePoint, similarityScore], ...] }
+//
+// Similarity scores (1-5):
+//   5 = Nearly identical (Fullwidth, Math italic/bold variants)
+//   4 = Very similar (Cyrillic, Greek - same-origin script lookalikes)
+//   3 = Similar (Coptic, Armenian, modifier letters)
+//   2 = Somewhat similar (Cherokee, Canadian Syllabics, Hebrew)
+//   1 = Vaguely similar (Lisu, Vai, Runic, exotic scripts)
+//
+// All codepoints are in BMP (U+0000-U+FFFF) to ensure rendering.
+// SMP characters (U+10000+) have been removed as they rarely render in browsers.
+
+// Determine similarity score based on Unicode block
+function scoreForCodepoint(cp) {
+  // Fullwidth Latin (FF00-FF5F) - nearly identical
+  if (cp >= 0xFF00 && cp <= 0xFF5F) return 5;
+  // Fullwidth misc (FFE0-FFEF)
+  if (cp >= 0xFFE0 && cp <= 0xFFEF) return 5;
+  // Math symbols that look like letters (2100-214F)
+  if (cp >= 0x2100 && cp <= 0x214F) return 5;
+  // Roman numerals (2160-217F)
+  if (cp >= 0x2160 && cp <= 0x217F) return 4;
+  // Cyrillic (0400-04FF)
+  if (cp >= 0x0400 && cp <= 0x04FF) return 4;
+  // Greek and Coptic (0370-03FF)
+  if (cp >= 0x0370 && cp <= 0x03FF) return 4;
+  // Greek Extended (1F00-1FFF)
+  if (cp >= 0x1F00 && cp <= 0x1FFF) return 4;
+  // Latin Extended-B (0180-024F) - close variants
+  if (cp >= 0x0180 && cp <= 0x024F) return 4;
+  // Latin Extended Additional (1E00-1EFF)
+  if (cp >= 0x1E00 && cp <= 0x1EFF) return 4;
+  // Coptic (2C80-2CFF)
+  if (cp >= 0x2C80 && cp <= 0x2CFF) return 3;
+  // Cyrillic Supplement (0500-052F)
+  if (cp >= 0x0500 && cp <= 0x052F) return 3;
+  // Armenian (0530-058F)
+  if (cp >= 0x0530 && cp <= 0x058F) return 3;
+  // Modifier letters (02B0-02FF)
+  if (cp >= 0x02B0 && cp <= 0x02FF) return 3;
+  // General punctuation lookalikes (2000-206F)
+  if (cp >= 0x2000 && cp <= 0x206F) return 3;
+  // Letterlike symbols (2100-214F) already covered above
+  // Math operators that look like chars (2200-22FF)
+  if (cp >= 0x2200 && cp <= 0x22FF) return 3;
+  // Latin Extended-A (0100-017F)
+  if (cp >= 0x0100 && cp <= 0x017F) return 4;
+  // Latin Ext-D (A720-A7FF)
+  if (cp >= 0xA720 && cp <= 0xA7FF) return 3;
+  // Latin Ext-E (AB30-AB6F)
+  if (cp >= 0xAB30 && cp <= 0xAB6F) return 3;
+  // IPA Extensions (0250-02AF)
+  if (cp >= 0x0250 && cp <= 0x02AF) return 3;
+  // Spacing Modifier Letters (02B0-02FF) already covered
+  // Hebrew (0590-05FF)
+  if (cp >= 0x0590 && cp <= 0x05FF) return 2;
+  // Arabic (0600-06FF)
+  if (cp >= 0x0600 && cp <= 0x06FF) return 2;
+  // Arabic Supplement (0750-077F)
+  if (cp >= 0x0750 && cp <= 0x077F) return 2;
+  // Devanagari (0900-097F)
+  if (cp >= 0x0900 && cp <= 0x097F) return 2;
+  // Bengali, Gurmukhi, Gujarati, etc. (0980-0FFF)
+  if (cp >= 0x0980 && cp <= 0x0FFF) return 2;
+  // Thai (0E00-0E7F), Lao (0E80-0EFF)
+  if (cp >= 0x0E00 && cp <= 0x0EFF) return 2;
+  // Myanmar (1000-109F)
+  if (cp >= 0x1000 && cp <= 0x109F) return 2;
+  // Georgian (10A0-10FF)
+  if (cp >= 0x10A0 && cp <= 0x10FF) return 2;
+  // Cherokee (13A0-13FF)
+  if (cp >= 0x13A0 && cp <= 0x13FF) return 2;
+  // Canadian Syllabics (1400-167F)
+  if (cp >= 0x1400 && cp <= 0x167F) return 2;
+  // Tifinagh (2D30-2D7F)
+  if (cp >= 0x2D30 && cp <= 0x2D7F) return 2;
+  // NKo (07C0-07FF)
+  if (cp >= 0x07C0 && cp <= 0x07FF) return 2;
+  // Runic (16A0-16FF)
+  if (cp >= 0x16A0 && cp <= 0x16FF) return 1;
+  // Ogham (1680-169F)
+  if (cp >= 0x1680 && cp <= 0x169F) return 1;
+  // Lisu (A4D0-A4FF)
+  if (cp >= 0xA4D0 && cp <= 0xA4FF) return 1;
+  // Vai (A500-A63F)
+  if (cp >= 0xA500 && cp <= 0xA63F) return 1;
+  // Bamum (A6A0-A6FF)
+  if (cp >= 0xA6A0 && cp <= 0xA6FF) return 1;
+  // CJK (3000-9FFF, F900-FAFF)
+  if ((cp >= 0x3000 && cp <= 0x9FFF) || (cp >= 0xF900 && cp <= 0xFAFF)) return 1;
+  // Arabic Presentation Forms (FB50-FDFF, FE70-FEFF)
+  if ((cp >= 0xFB00 && cp <= 0xFDFF) || (cp >= 0xFE00 && cp <= 0xFEFF)) return 2;
+  // Small Form Variants (FE50-FE6F)
+  if (cp >= 0xFE50 && cp <= 0xFE6F) return 3;
+  // Miscellaneous Symbols (2600-26FF), Dingbats (2700-27BF)
+  if (cp >= 0x2600 && cp <= 0x27BF) return 2;
+  // Supplemental punctuation (2E00-2E7F)
+  if (cp >= 0x2E00 && cp <= 0x2E7F) return 3;
+  // Misc Math (2980-29FF, 2A00-2AFF)
+  if (cp >= 0x2980 && cp <= 0x2AFF) return 3;
+  // Default
+  return 2;
+}
+
+// Raw confusable data: asciiCP -> [confusableCP, ...]
+// Only BMP codepoints (< 0x10000) included
+const RAW = {
+  // Symbols
+  0x0021: [0xFF01, 0x01C3, 0x2D51], // !
+  0x0026: [0xA778], // &
+  0x0027: [0x055D, 0xFF07, 0x2018, 0x2019, 0x201B, 0x2032, 0x2035, 0x055A, 0x05F3, 0x1FEF, 0xFF40, 0x00B4, 0x0384, 0x1FFD, 0x1FBD, 0x1FBF, 0x1FFE, 0x02B9, 0x0374, 0x02C8, 0x02CA, 0x02CB, 0x02F4, 0x02BB, 0x02BD, 0x02BC, 0x02BE, 0xA78C, 0x05D9, 0x07F4, 0x07F5, 0x144A, 0x16CC], // '
+  0x0028: [0xFF3B, 0x2768, 0x2772, 0x3014, 0xFD3E], // (
+  0x0029: [0xFF3D, 0x2769, 0x2773, 0x3015, 0xFD3F], // )
+  0x002A: [0x204E, 0x066D, 0x2217], // *
+  0x002B: [0x16ED, 0x2795], // +
+  0x002C: [0x060D, 0x066B, 0x201A, 0x00B8, 0xA4F9], // ,
+  0x002D: [0x2010, 0x2011, 0x2012, 0x2013, 0xFE58, 0x06D4, 0x2043, 0x02D7, 0x2212, 0x2796, 0x2CBA], // -
+  0x002E: [0x2024, 0x0701, 0x0702, 0xA60E, 0x0660, 0x06F0, 0xA4F8], // .
+  0x002F: [0x1735, 0x2041, 0x2215, 0x2044, 0x2571, 0x27CB, 0x29F8, 0x31D3, 0x3033, 0x2CC6, 0x4E3F, 0x2F03], // /
+  0x003A: [0x0903, 0x0A83, 0xFF1A, 0x0589, 0x0703, 0x0704, 0x16EC, 0xFE30, 0x1803, 0x1809, 0x205A, 0x05C3, 0x02F8, 0xA789, 0x2236, 0x02D0, 0xA4FD], // :
+  0x003B: [0x037E], // ;
+  0x003C: [0x2039, 0x276E, 0x02C2, 0x1438, 0x16B2], // <
+  0x003D: [0x1400, 0x2E40, 0x30A0, 0xA4FF], // =
+  0x003E: [0x203A, 0x276F, 0x02C3, 0x1433], // >
+  0x003F: [0x0241, 0x0294, 0x097D, 0x13AE], // ?
+  0x005C: [0xFF3C, 0xFE68, 0x2216, 0x27CD, 0x29F5, 0x29F9, 0x31D4, 0x4E36, 0x2F02], // backslash
+  0x005E: [0x02C4, 0x02C6], // ^
+  0x005F: [0x07FA, 0xFE4D, 0xFE4E, 0xFE4F], // _
+  0x007B: [0x2774], // {
+  0x007D: [0x2775], // }
+  0x007E: [0x2053, 0x02DC, 0x1FC0, 0x223C], // ~
+
+  // Digits
+  0x0032: [0xA75A, 0x01A7, 0x03E8, 0xA644, 0x14BF], // 2
+  0x0033: [0xA7AB, 0x021C, 0x01B7, 0xA76A, 0x2CCC, 0x0417, 0x04E0], // 3
+  0x0034: [0x13CE], // 4
+  0x0035: [0x01BC], // 5
+  0x0036: [0x2CD2, 0x0431, 0x13EE], // 6
+  0x0037: [], // 7 - no BMP confusables
+  0x0038: [0x0B03, 0x09EA, 0x0A6A, 0x0223, 0x0222], // 8
+  0x0039: [0x0A67, 0x0B68, 0x09ED, 0xA76E, 0x2CCA], // 9
+
+  // Uppercase Letters
+  0x0041: [0xFF21, 0x0391, 0x0410, 0x13AA, 0x15C5, 0xA4EE], // A
+  0x0042: [0xFF22, 0x212C, 0x0392, 0x0412, 0x13F4, 0x15F7, 0xA4D0, 0xA7B4], // B
+  0x0043: [0xFF23, 0x216D, 0x2102, 0x212D, 0x03F9, 0x2CA4, 0x0421, 0x13DF, 0xA4DA], // C
+  0x0044: [0x216E, 0x2145, 0x13A0, 0x15DE, 0x15EA, 0xA4D3], // D
+  0x0045: [0xFF25, 0x2130, 0x0395, 0x0415, 0x2D39, 0x13AC, 0xA4F0], // E
+  0x0046: [0x2131, 0xA798, 0x03DC, 0x15B4, 0xA4DD], // F
+  0x0047: [0x050C, 0x13C0, 0x13F3, 0xA4D6], // G
+  0x0048: [0xFF28, 0x210B, 0x210C, 0x210D, 0x0397, 0x2C8E, 0x041D, 0x13BB, 0x157C, 0xA4E7], // H
+  0x004A: [0xFF2A, 0x037F, 0x0408, 0x13AB, 0x148D, 0xA4D9, 0xA7B2], // J
+  0x004B: [0x212A, 0xFF2B, 0x039A, 0x2C94, 0x041A, 0x13E6, 0x16D5, 0xA4D7], // K
+  0x004C: [0x216C, 0x2112, 0x2CD0, 0x13DE, 0x14AA, 0xA4E1], // L
+  0x004D: [0xFF2D, 0x216F, 0x2133, 0x039C, 0x03FA, 0x2C98, 0x041C, 0x13B7, 0x15F0, 0x16D6, 0xA4DF], // M
+  0x004E: [0xFF2E, 0x2115, 0x039D, 0x2C9A, 0xA4E0], // N
+  0x004F: [0xFF2F, 0x039F, 0x041E, 0x0555, 0x07C0, 0x09E6, 0x0B20, 0x0B66, 0x0D20, 0x2C9E, 0x2D54, 0x3007, 0xA4F3], // O
+  0x0050: [0xFF30, 0x2119, 0x03A1, 0x2CA2, 0x0420, 0x13E2, 0x146D, 0xA4D1], // P
+  0x0051: [0x211A, 0x2D55], // Q
+  0x0052: [0x211B, 0x211C, 0x211D, 0x01A6, 0x13A1, 0x13D2, 0x1587, 0xA4E3], // R
+  0x0053: [0xFF33, 0x0405, 0x054F, 0x13D5, 0x13DA, 0xA4E2], // S
+  0x0054: [0xFF34, 0x22A4, 0x03A4, 0x2CA6, 0x0422, 0x13A2, 0xA4D4], // T
+  0x0055: [0x222A, 0x22C3, 0x054D, 0x144C, 0xA4F4], // U
+  0x0056: [0x0667, 0x06F7, 0x2164, 0x0474, 0x2D38, 0x13D9, 0x142F, 0xA4E6], // V
+  0x0057: [0x051C, 0x13B3, 0x13D4, 0xA4EA], // W
+  0x0058: [0xFF38, 0x2169, 0x166D, 0x2573, 0x03A7, 0x2CAC, 0x0425, 0x2D5D, 0x16B7, 0xA4EB, 0xA7B3], // X
+  0x0059: [0xFF39, 0x03A5, 0x03D2, 0x2CA8, 0x04AE, 0x13A9, 0x13BD, 0xA4EC], // Y
+  0x005A: [0xFF3A, 0x2124, 0x2128, 0x0396, 0x13C3, 0xA4DC], // Z
+
+  // Lowercase Letters
+  0x0061: [0xFF41, 0x0251, 0x03B1, 0x0430], // a
+  0x0062: [0x0184, 0x042C, 0x13CF, 0x15AF], // b
+  0x0063: [0xFF43, 0x217D, 0x03F2, 0x2CA5, 0x0441], // c
+  0x0064: [0x217E, 0x2146, 0x0501, 0x13E7, 0x146F, 0xA4D2], // d
+  0x0065: [0x212E, 0xFF45, 0x212F, 0x2147, 0xAB32, 0x0435, 0x04BD], // e
+  0x0066: [0xA799, 0x017F, 0x1E9D, 0x0584], // f
+  0x0067: [0xFF47, 0x210A, 0x0261, 0x1D83, 0x018D, 0x0581], // g
+  0x0068: [0xFF48, 0x210E, 0x04BB, 0x0570, 0x13C2], // h
+  0x0069: [0x02DB, 0x2373, 0xFF49, 0x2170, 0x2139, 0x2148, 0x0131, 0x026A, 0x0269, 0x03B9, 0x1FBE, 0x037A, 0x0456, 0xA647, 0x04CF, 0x13A5], // i
+  0x006A: [0xFF4A, 0x2149, 0x03F3, 0x0458], // j
+  0x006B: [0x0138, 0x03BA, 0x03F0, 0x2C95, 0x043A], // k
+  0x006C: [0x05C0, 0x2223, 0xFFE8, 0x0661, 0x06F1, 0xFF29, 0x2160, 0x2110, 0x2111, 0x0196, 0xFF4C, 0x217C, 0x2113, 0x01C0, 0x0399, 0x2C92, 0x0406, 0x04C0, 0x05D5, 0x05DF, 0x0627, 0x07CA, 0x2D4F, 0x16C1, 0xA4F2], // l
+  0x006E: [0x03C0, 0x03D6, 0x213C, 0x0578, 0x057C], // n
+  0x006F: [0xFF4F, 0x03BF, 0x03C3, 0x043E, 0x0585, 0x05E1, 0x0647, 0x0665, 0x06BE, 0x06C1, 0x06D5, 0x06F5, 0x0966, 0x0A66, 0x0AE6, 0x0BE6, 0x0C66, 0x0CE6, 0x0D66, 0x0E50, 0x0ED0, 0x101D, 0x1040, 0x10FF, 0x2134, 0x2C9F, 0xAB3D], // o
+  0x0070: [0x2374, 0xFF50, 0x03C1, 0x03F1, 0x2CA3, 0x0440], // p
+  0x0071: [0x051B, 0x0563, 0x0566], // q
+  0x0072: [0xAB47, 0xAB48, 0x2C85, 0x0433], // r
+  0x0073: [0xFF53, 0xA731, 0x01BD, 0x0455], // s
+  0x0074: [0x03C4, 0x0442], // t
+  0x0075: [0xA79F, 0x028B, 0x03C5, 0x0446, 0x057D], // u
+  0x0076: [0x2228, 0x22C1, 0xFF56, 0x2174, 0x03BD, 0x0475, 0x05D8], // v
+  0x0078: [0x166E, 0x00D7, 0x292B, 0x292C, 0x2A2F, 0xFF58, 0x2179, 0x0445, 0x1541, 0x157D], // x
+  0x0079: [0x0263, 0xFF59, 0x028F, 0x1EFF, 0xAB5A, 0x03B3, 0x213D, 0x0443, 0x04AF, 0x10E7], // y
+  0x007A: [], // z - no BMP confusables
+};
+
+// Build the scored CONFUSABLES map
+export const CONFUSABLES = {};
+for (const [asciiHex, codepoints] of Object.entries(RAW)) {
+  const asciiCp = parseInt(asciiHex);
+  if (codepoints.length === 0) continue;
+  CONFUSABLES[asciiCp] = codepoints.map(cp => [cp, scoreForCodepoint(cp)]);
+}
+
+// Reverse mapping: from Unicode confusable code point to ASCII code point
+export const REVERSE_CONFUSABLES = {};
+for (const [asciiCp, entries] of Object.entries(CONFUSABLES)) {
+  for (const [cp] of entries) {
+    REVERSE_CONFUSABLES[cp] = parseInt(asciiCp);
+  }
+}
+
+// Get all ASCII characters that have confusables
+export function getConfusableAsciiChars() {
+  return Object.keys(CONFUSABLES).map(cp => {
+    const asciiCp = parseInt(cp);
+    return {
+      codePoint: asciiCp,
+      char: String.fromCodePoint(asciiCp),
+      confusableCount: CONFUSABLES[asciiCp].length,
+    };
+  }).sort((a, b) => a.codePoint - b.codePoint);
+}
+
+// Get confusables for a given ASCII codepoint, optionally filtered by min similarity
+export function getConfusablesForChar(asciiCodePoint, minSimilarity = 1) {
+  const entries = CONFUSABLES[asciiCodePoint];
+  if (!entries) return [];
+  return entries.filter(([, score]) => score >= minSimilarity);
+}
+
+// Pick a random confusable for a given ASCII code point at given min similarity
+function pickRandomConfusable(asciiCodePoint, minSimilarity) {
+  const candidates = getConfusablesForChar(asciiCodePoint, minSimilarity);
+  if (candidates.length === 0) return asciiCodePoint;
+  return candidates[Math.floor(Math.random() * candidates.length)][0];
+}
+
+// Convert ASCII text to confusable text
+export function toConfusable(text, options = {}) {
+  const { intensity = 1.0, minSimilarity = 1, onlyLetters = false } = options;
+  let result = '';
+  for (const char of text) {
+    const cp = char.codePointAt(0);
+    const candidates = getConfusablesForChar(cp, minSimilarity);
+    if (candidates.length > 0 && Math.random() < intensity) {
+      if (onlyLetters && !((cp >= 0x41 && cp <= 0x5A) || (cp >= 0x61 && cp <= 0x7A))) {
+        result += char;
+      } else {
+        result += String.fromCodePoint(pickRandomConfusable(cp, minSimilarity));
+      }
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+// Convert confusable text back to ASCII
+export function toAscii(text) {
+  let result = '';
+  for (const char of text) {
+    const cp = char.codePointAt(0);
+    if (REVERSE_CONFUSABLES[cp] !== undefined) {
+      result += String.fromCodePoint(REVERSE_CONFUSABLES[cp]);
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+// Analyze text and return character details
+export function analyzeText(text) {
+  const chars = [];
+  for (const char of text) {
+    const cp = char.codePointAt(0);
+    const isAscii = cp >= 0x20 && cp <= 0x7E;
+    const isConfusable = REVERSE_CONFUSABLES[cp] !== undefined;
+    const mapsTo = isConfusable ? REVERSE_CONFUSABLES[cp] : null;
+
+    // Find similarity score if this is a known confusable
+    let similarity = null;
+    if (isConfusable) {
+      const entries = CONFUSABLES[mapsTo];
+      if (entries) {
+        const entry = entries.find(([c]) => c === cp);
+        if (entry) similarity = entry[1];
+      }
+    }
+
+    chars.push({
+      char,
+      codePoint: cp,
+      hex: cp.toString(16).toUpperCase().padStart(4, '0'),
+      isAscii,
+      isConfusable,
+      similarity,
+      mapsToAscii: mapsTo !== null ? String.fromCodePoint(mapsTo) : null,
+      mapsToHex: mapsTo !== null ? mapsTo.toString(16).toUpperCase().padStart(4, '0') : null,
+      unicodeName: `U+${cp.toString(16).toUpperCase().padStart(4, '0')}`,
+    });
+  }
+  return chars;
+}
