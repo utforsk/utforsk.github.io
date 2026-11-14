@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Follow Lumi, a tiny ray of sunlight, and find out how the rainbow gets its colours.">
+    <meta name="theme-color" content="#0d1330">
+    <title>The Rainbow’s Secret</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-row">
+            <a href="#start" class="brand" data-i18n="hero.title"></a>
+            <div class="lang-switch" role="group" data-i18n-aria="nav.language">
+                <button type="button" data-lang="en">EN</button>
+                <button type="button" data-lang="nb">NO</button>
+            </div>
+        </div>
+        <div class="chips" id="chapter-chips"></div>
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+    </nav>
+
+    <header class="hero" id="start">
+        <div class="hero-sky">
+            <div class="hero-bow"></div>
+            <div class="hero-bow hero-bow-2"></div>
+        </div>
+        <div class="hero-content">
+            <h1 data-i18n="hero.title"></h1>
+            <p class="hero-lead" data-i18n="hero.lead"></p>
+            <div class="lumi-row">
+                <div class="lumi" aria-hidden="true"><span></span></div>
+                <div class="bubble" data-i18n-html="hero.bubble"></div>
+            </div>
+            <a class="btn btn-big" href="#waves" data-i18n="hero.start"></a>
+        </div>
+    </header>
+
+    <main>
+        <!-- 1 Waves -->
+        <section class="chapter" id="waves" data-chip="ch1.chip">
+            <div class="chapter-head"><span class="chapter-no">1</span><h2 data-i18n="ch1.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch1.bubble"></div></div>
+            <div class="widget">
+                <canvas id="wave-canvas" class="canvas-wave" data-i18n-aria="ch1.canvasLabel"></canvas>
+                <div class="controls">
+                    <label class="slider-label" for="wave-slider"><span data-i18n="common.wavelength"></span>: <b id="wave-nm"></b> &middot; <b id="wave-name"></b></label>
+                    <input type="range" id="wave-slider" min="380" max="750" value="550" step="1" class="rainbow-range">
+                    <div class="slider-ends"><span data-i18n="common.shortWaves"></span><span data-i18n="common.longWaves"></span></div>
+                </div>
+                <div class="readouts">
+                    <div class="readout"><span class="readout-label" data-i18n="ch1.vib"></span><span class="readout-value" id="wave-freq"></span><span class="readout-sub" data-i18n="ch1.vibSub"></span></div>
+                    <div class="readout"><span class="readout-label" data-i18n="ch1.hair"></span><span class="readout-value" id="wave-hair"></span><span class="readout-sub" data-i18n="ch1.hairSub"></span></div>
+                    <div class="readout"><span class="readout-label" data-i18n="ch1.energy"></span><div class="meter"><div id="wave-energy"></div></div><span class="readout-sub" data-i18n="ch1.energySub"></span></div>
+                </div>
+                <div class="challenge" id="wave-challenge">
+                    <div class="challenge-swatch" id="challenge-swatch"></div>
+                    <div class="challenge-text">
+                        <b data-i18n="ch1.challengeTitle"></b>
+                        <span class="challenge-msg" id="challenge-msg"></span>
+                        <span class="challenge-score"><span data-i18n="ch1.score"></span>: <b id="challenge-score">0</b></span>
+                    </div>
+                    <button class="btn" id="challenge-btn"></button>
+                </div>
+            </div>
+            <div class="facts" data-facts="ch1"></div>
+        </section>
+
+        <!-- 2 White light -->
+        <section class="chapter" id="white" data-chip="ch2.chip">
+            <div class="chapter-head"><span class="chapter-no">2</span><h2 data-i18n="ch2.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch2.bubble"></div></div>
+            <div class="two-col">
+                <div class="widget">
+                    <h3 class="widget-title" data-i18n="ch2.mixTitle"></h3>
+                    <canvas id="mix-canvas" class="canvas-mix touch-canvas" data-i18n-aria="ch2.mixLabel"></canvas>
+                    <div class="button-row">
+                        <button class="btn toggle on" data-light="0" style="--tc:#ff3b3b" data-i18n="ch2.red"></button>
+                        <button class="btn toggle on" data-light="1" style="--tc:#32e05a" data-i18n="ch2.green"></button>
+                        <button class="btn toggle on" data-light="2" style="--tc:#3b7bff" data-i18n="ch2.blue"></button>
+                        <button class="btn" id="mix-gather" data-i18n="ch2.together"></button>
+                        <button class="btn" id="mix-spread" data-i18n="ch2.apart"></button>
+                    </div>
+                    <p class="hint" data-i18n="ch2.mixHint"></p>
+                    <p class="small" data-i18n="ch2.mixNote"></p>
+                </div>
+                <div class="widget">
+                    <h3 class="widget-title" data-i18n="ch2.newtonTitle"></h3>
+                    <div class="newton-wrap"><div class="newton" id="newton"></div></div>
+                    <label class="slider-label" for="newton-speed"><span data-i18n="ch2.speed"></span>: <b id="newton-speed-label"></b></label>
+                    <input type="range" id="newton-speed" min="0" max="100" value="0">
+                    <p class="small" data-i18n="ch2.newtonNote"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3 Bending lab -->
+        <section class="chapter" id="bending" data-chip="ch3.chip">
+            <div class="chapter-head"><span class="chapter-no">3</span><h2 data-i18n="ch3.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch3.bubble"></div></div>
+            <div class="widget">
+                <canvas id="bend-canvas" class="canvas-bend touch-canvas" data-i18n-aria="ch3.canvasLabel"></canvas>
+                <p class="explain" id="bend-explain" aria-live="polite"></p>
+                <div class="control-grid">
+                    <div class="control">
+                        <span class="slider-label" data-i18n="ch3.shape"></span>
+                        <div class="segmented" id="bend-shape">
+                            <button class="seg on" data-shape="prism" data-i18n="ch3.prism"></button>
+                            <button class="seg" data-shape="drop" data-i18n="ch3.drop"></button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <span class="slider-label" data-i18n="ch3.material"></span>
+                        <div class="segmented" id="bend-material">
+                            <button class="seg" data-material="water" data-i18n="ch3.water"></button>
+                            <button class="seg on" data-material="glass" data-i18n="ch3.glass"></button>
+                            <button class="seg" data-material="diamond" data-i18n="ch3.diamond"></button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <span class="slider-label" data-i18n="ch3.light"></span>
+                        <div class="segmented" id="bend-light">
+                            <button class="seg on" data-light="white" data-i18n="ch3.white"></button>
+                            <button class="seg" data-light="one" data-i18n="ch3.one"></button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="bend-colour"><span data-i18n="ch3.colour"></span>: <b id="bend-colour-label"></b></label>
+                        <input type="range" id="bend-colour" min="400" max="700" value="620" class="rainbow-range" disabled>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="bend-hit" data-i18n="ch3.hit"></label>
+                        <input type="range" id="bend-hit" min="0" max="100" value="55">
+                    </div>
+                    <div class="control stack" id="bend-extra">
+                        <div data-variant="prism">
+                            <label class="slider-label" for="bend-turn" data-i18n="ch3.turn"></label>
+                            <input type="range" id="bend-turn" min="-35" max="35" value="0">
+                        </div>
+                        <div data-variant="drop">
+                            <span class="slider-label" data-i18n="ch3.bounces"></span>
+                            <div class="button-row">
+                                <div class="segmented" id="bend-bounces">
+                                    <button class="seg on" data-bounces="1" data-i18n="ch3.b1"></button>
+                                    <button class="seg" data-bounces="2" data-i18n="ch3.b2"></button>
+                                </div>
+                                <button class="btn toggle small-btn" id="bend-many" data-i18n="ch3.many"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="stack hint-stack" id="bend-hint">
+                    <p class="hint" data-variant="prism" data-i18n="ch3.hintPrism"></p>
+                    <p class="hint" data-variant="drop" data-i18n="ch3.hintDrop"></p>
+                </div>
+                <p class="small" data-i18n="ch3.note"></p>
+            </div>
+            <div class="facts" data-facts="ch3"></div>
+        </section>
+
+        <!-- 4 Colours -->
+        <section class="chapter" id="colours" data-chip="ch4.chip">
+            <div class="chapter-head"><span class="chapter-no">4</span><h2 data-i18n="ch4.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch4.bubble"></div></div>
+            <div class="two-col colours-layout">
+                <div class="widget bands-widget">
+                    <svg id="bands-svg" class="bands-svg" viewBox="0 0 400 215" role="group" data-i18n-aria="ch4.svgLabel"></svg>
+                </div>
+                <div class="widget color-card stack" id="color-card" aria-live="polite"></div>
+            </div>
+            <div class="facts" data-facts="ch4"></div>
+        </section>
+
+        <!-- 5 Rainbow lab -->
+        <section class="chapter" id="lab" data-chip="ch5.chip">
+            <div class="chapter-head"><span class="chapter-no">5</span><h2 data-i18n="ch5.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch5.bubble"></div></div>
+            <div class="widget lab">
+                <div class="preset-row">
+                    <span class="slider-label" data-i18n="ch5.presets"></span>
+                    <div class="button-row" id="lab-presets"></div>
+                    <span class="cap-hint" data-i18n="ch5.presetHint"></span>
+                </div>
+                <div class="lab-grid">
+                    <figure class="lab-view">
+                        <figcaption data-i18n="ch5.viewTitle"></figcaption>
+                        <canvas id="sky-canvas" class="canvas-sky" data-i18n-aria="ch5.viewLabel"></canvas>
+                    </figure>
+                    <figure>
+                        <figcaption><span data-i18n="ch5.mapTitle"></span> <span class="cap-hint" data-i18n="ch5.mapHint"></span></figcaption>
+                        <canvas id="map-canvas" class="canvas-map touch-canvas" data-i18n-aria="ch5.mapLabel"></canvas>
+                    </figure>
+                    <figure>
+                        <figcaption><span data-i18n="ch5.sideTitle"></span> <span class="cap-hint" data-i18n="ch5.sideHint"></span></figcaption>
+                        <canvas id="side-canvas" class="canvas-side touch-canvas" data-i18n-aria="ch5.sideLabel"></canvas>
+                    </figure>
+                    <figure class="lab-drop">
+                        <figcaption><span data-i18n="ch5.dropTitle"></span> <span class="cap-hint" data-i18n="ch5.dropHint"></span></figcaption>
+                        <canvas id="drop-canvas" class="canvas-drop" data-i18n-aria="ch5.dropLabel"></canvas>
+                    </figure>
+                </div>
+                <div class="control-grid">
+                    <div class="control">
+                        <span class="slider-label" data-i18n="ch5.whereLabel"></span>
+                        <div class="segmented" id="lab-where">
+                            <button class="seg on" data-where="ground" data-i18n="ch5.whereGround"></button>
+                            <button class="seg" data-where="plane" data-i18n="ch5.wherePlane"></button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <span class="slider-label" data-i18n="ch5.sourceLabel"></span>
+                        <div class="segmented" id="lab-source">
+                            <button class="seg on" data-source="sun" data-i18n="ch5.sourceSun"></button>
+                            <button class="seg" data-source="moon" data-i18n="ch5.sourceMoon"></button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <span class="slider-label" data-i18n="ch5.showLabel"></span>
+                        <div class="button-row">
+                            <button class="btn toggle small-btn on" id="lab-helpers" data-i18n="ch5.helpers"></button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="lab-elev"><span id="lab-elev-name"></span> <b id="lab-elev-label"></b></label>
+                        <input type="range" id="lab-elev" min="0" max="60" value="15" class="sun-range">
+                        <div class="slider-ends"><span data-i18n="ch5.low"></span><span data-i18n="ch5.high"></span></div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="lab-dir"><span id="lab-dir-name"></span> <b id="lab-dir-label"></b></label>
+                        <input type="range" id="lab-dir" min="-180" max="180" value="0">
+                        <div class="slider-ends three"><span data-i18n="ch5.dirLeft"></span><span data-i18n="ch5.dirBehind"></span><span data-i18n="ch5.dirRight"></span></div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="lab-size"><span data-i18n="ch5.dropSize"></span> <b id="lab-size-label"></b></label>
+                        <input type="range" id="lab-size" min="0" max="100" value="81" class="drop-range">
+                        <div class="slider-ends"><span data-i18n="ch5.dropFog"></span><span data-i18n="ch5.dropRain"></span></div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="lab-clear"><span data-i18n="ch5.clear"></span> <b id="lab-clear-label"></b></label>
+                        <input type="range" id="lab-clear" min="0" max="100" value="70">
+                        <div class="slider-ends"><span data-i18n="ch5.clearLow"></span><span data-i18n="ch5.clearHigh"></span></div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="lab-dark"><span data-i18n="ch5.dark"></span> <b id="lab-dark-label"></b></label>
+                        <input type="range" id="lab-dark" min="0" max="100" value="40">
+                        <div class="slider-ends"><span data-i18n="ch5.darkLow"></span><span data-i18n="ch5.darkHigh"></span></div>
+                    </div>
+                    <div class="control">
+                        <label class="slider-label" for="lab-rain"><span data-i18n="ch5.rainAmount"></span> <b id="lab-rain-label"></b></label>
+                        <input type="range" id="lab-rain" min="0" max="100" value="60">
+                        <div class="slider-ends"><span data-i18n="ch5.rainLow"></span><span data-i18n="ch5.rainHigh"></span></div>
+                    </div>
+                </div>
+                <div class="explain explain-tall" id="lab-explain" aria-live="polite"></div>
+            </div>
+            <div class="facts" data-facts="ch5"></div>
+        </section>
+
+        <!-- 6 Spectrum -->
+        <section class="chapter" id="spectrum" data-chip="ch6.chip">
+            <div class="chapter-head"><span class="chapter-no">6</span><h2 data-i18n="ch6.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch6.bubble"></div></div>
+            <div class="widget">
+                <div class="spectrum-wrap">
+                    <div class="spectrum-icons" id="spectrum-icons"></div>
+                    <div class="spectrum-bar" id="spectrum-bar"></div>
+                </div>
+                <input type="range" id="spectrum-slider" min="0" max="1000" value="600" data-i18n-aria="ch6.sliderLabel">
+                <div class="slider-ends"><span data-i18n="ch6.longEnd"></span><span data-i18n="ch6.shortEnd"></span></div>
+                <p class="small" data-i18n="ch6.barHint"></p>
+                <canvas id="spectrum-canvas" class="canvas-spectrum" data-i18n-aria="ch6.canvasLabel"></canvas>
+                <div class="spectrum-info">
+                    <div class="stack" id="spectrum-text"></div>
+                    <div class="cells">
+                        <div class="cell"><div class="k" data-i18n="ch6.cellWl"></div><div class="v" id="spec-wl"></div></div>
+                        <div class="cell"><div class="k" data-i18n="ch6.cellFreq"></div><div class="v" id="spec-freq"></div></div>
+                        <div class="cell"><div class="k" data-i18n="ch6.cellSize"></div><div class="v" id="spec-size"></div></div>
+                        <div class="cell"><div class="k" data-i18n="ch6.cellEnergy"></div><div class="meter"><div id="spec-energy"></div></div></div>
+                    </div>
+                    <p class="antenna" id="spec-antenna"></p>
+                </div>
+            </div>
+            <h3 class="sub-title" data-i18n="ch6.extremesTitle"></h3>
+            <div class="facts" data-facts="ch6"></div>
+        </section>
+
+        <!-- 7 Animal eyes -->
+        <section class="chapter" id="animals" data-chip="ch7.chip">
+            <div class="chapter-head"><span class="chapter-no">7</span><h2 data-i18n="ch7.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch7.bubble"></div></div>
+            <div class="widget">
+                <div class="button-row" id="animal-buttons"></div>
+                <canvas id="animal-canvas" class="canvas-animal" data-i18n-aria="ch7.canvasLabel"></canvas>
+                <div class="button-row"><button class="btn toggle small-btn on" id="animal-compare" data-i18n="ch7.compare"></button></div>
+                <div class="explain stack" id="animal-info" aria-live="polite"></div>
+                <p class="small" data-i18n="ch7.note"></p>
+            </div>
+        </section>
+
+        <!-- 8 Try it -->
+        <section class="chapter" id="try" data-chip="ch8.chip">
+            <div class="chapter-head"><span class="chapter-no">8</span><h2 data-i18n="ch8.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch8.bubble"></div></div>
+            <div class="experiments" id="experiments"></div>
+        </section>
+
+        <!-- 9 Quiz -->
+        <section class="chapter" id="quiz" data-chip="ch9.chip">
+            <div class="chapter-head"><span class="chapter-no">9</span><h2 data-i18n="ch9.title"></h2></div>
+            <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch9.bubble"></div></div>
+            <div class="widget quiz" id="quiz-box" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <footer>
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/rainbow" target="_blank" rel="noopener" class="version">v1.0.0</a>
+        <span><span data-i18n="footer.partOf"></span> <a href="https://github.com/utforsk/utforsk.github.io">utforsk</a></span>
+    </footer>
+
+    <script src="i18n.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

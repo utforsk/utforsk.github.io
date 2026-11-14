@@ -120,6 +120,22 @@ Type ASCII text and see it transformed into visually identical but technically d
 - 📋 **Reference Table:** Browse all 522 BMP confusable variants across 78 ASCII characters with similarity scores.
 - 🌐 **Browser-based** - no installation required.
 
+### [`rainbow`](https://utforsk.github.io/rainbow)
+
+> ✅ **Status: Available**
+> Try it now at [utforsk.github.io/rainbow](https://utforsk.github.io/rainbow)
+> 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[rainbow]%20Issue%3A%20&labels=rainbow)
+
+An interactive story for kids around 10 about how the rainbow gets its colours, in English and Norwegian.
+Follow Lumi, a tiny ray of sunlight, from light waves through a prism and a raindrop out to the whole electromagnetic spectrum.
+
+- 🌊 **Light waves:** Change the wavelength and watch the colour change, plus a colour-matching game.
+- 🔺 **Bending lab:** Ray-traced prism and raindrop with material, colour, bounces and a ray histogram showing why 42° is special.
+- ☀️ **Rainbow lab:** Drag the sun around you and up and down, change drop size, moonlight or plane view, and see the sky, map and side view update together.
+- 📡 **Invisible light:** Radio to gamma rays with everyday devices, how each is sent and caught, antenna sizes and the longest and shortest waves.
+- 🐝 **Animal eyes:** The rainbow as seen by a bee, bird, dog, snake, mantis shrimp and a colour-blind person, side by side with yours.
+- 🧪 **Experiments** to try at home (including seeing a remote's infrared with a phone camera) and a quiz.
+
 More projects will be added here as ideas escape from the prompt buffer.
 
 ---
