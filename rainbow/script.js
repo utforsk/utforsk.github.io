@@ -194,6 +194,9 @@ class Stage {
         this.dpr = 1;
         this.visible = false;
         this.raf = 0;
+        this.hover = null;
+        this.drag = null;
+        this.used = false;
         new ResizeObserver(() => this.resize()).observe(canvas);
         new IntersectionObserver((entries) => {
             this.visible = entries[entries.length - 1].isIntersecting;
@@ -239,19 +242,161 @@ class Stage {
     }
 }
 
-function attachDrag(stage, { down, move }) {
+// Drag only the handle the pointer lands on. A touch anywhere else scrolls the page as usual.
+// hit(p, slop) returns a handle id or null; move(id, p, first) moves it.
+const HIT_SLOP = { mouse: 4, touch: 14 };
+
+function attachDrag(stage, { hit, move }) {
     const c = stage.canvas;
+    const slopFor = (type) => (type === 'mouse' ? HIT_SLOP.mouse : HIT_SLOP.touch);
+    const setHover = (id) => {
+        if (id === stage.hover) return;
+        stage.hover = id;
+        c.style.cursor = id === null ? '' : 'grab';
+        stage.request();
+    };
+
+    // Cancelling touchstart is the only way to stop the browser from scrolling for this one touch.
+    c.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1 && hit(stage.point(e.touches[0]), HIT_SLOP.touch) !== null) e.preventDefault();
+    }, { passive: false });
+
     c.addEventListener('pointerdown', (e) => {
-        if (down(stage.point(e)) === false) return;
-        c.setPointerCapture(e.pointerId);
+        if (e.button !== 0 || stage.drag) return;
+        const p = stage.point(e);
+        const id = hit(p, slopFor(e.pointerType));
+        if (id === null) return;
         e.preventDefault();
+        c.setPointerCapture(e.pointerId);
+        stage.drag = { id, pointerId: e.pointerId };
+        stage.used = true;
+        c.style.cursor = 'grabbing';
+        move(id, p, true);
+        stage.request();
     });
     c.addEventListener('pointermove', (e) => {
-        if (c.hasPointerCapture(e.pointerId)) move(stage.point(e));
+        const p = stage.point(e);
+        if (stage.drag) {
+            if (stage.drag.pointerId === e.pointerId) move(stage.drag.id, p, false);
+            stage.request();
+        } else if (e.pointerType === 'mouse') {
+            setHover(hit(p, HIT_SLOP.mouse));
+        }
     });
-    const release = (e) => { if (c.hasPointerCapture(e.pointerId)) c.releasePointerCapture(e.pointerId); };
+    const release = (e) => {
+        if (!stage.drag || stage.drag.pointerId !== e.pointerId) return;
+        stage.drag = null;
+        c.style.cursor = stage.hover === null ? '' : 'grab';
+        stage.request();
+    };
     c.addEventListener('pointerup', release);
     c.addEventListener('pointercancel', release);
+    c.addEventListener('pointerleave', () => { if (!stage.drag) setHover(null); });
+}
+
+function nearestHandle(p, slop, handles) {
+    let best = null, bestD = Infinity;
+    handles.forEach(({ id, x, y, r }) => {
+        const d = Math.hypot(p.x - x, p.y - y);
+        if (d <= r + slop && d < bestD) { best = id; bestD = d; }
+    });
+    return best;
+}
+
+// Marks something you can drag: a dashed ring that pulses until the first drag.
+function drawGrip(ctx, stage, id, x, y, r, time) {
+    const active = stage.drag?.id === id;
+    const hover = stage.hover === id;
+    ctx.save();
+    if (!stage.used) {
+        const k = (time * 0.7) % 1;
+        ctx.strokeStyle = `rgba(255,211,77,${0.7 * (1 - k)})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, r * (1 + 0.7 * k), 0, TAU);
+        ctx.stroke();
+    }
+    if (active || hover) {
+        ctx.fillStyle = 'rgba(255,211,77,0.22)';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, TAU);
+        ctx.fill();
+    }
+    ctx.strokeStyle = '#ffd34d';
+    ctx.lineWidth = active || hover ? 3 : 2;
+    ctx.setLineDash([5, 4]);
+    ctx.lineDashOffset = -time * 10;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.stroke();
+    ctx.restore();
+}
+
+// "Drag me" next to a handle until it has been used once.
+function dragHint(ctx, stage, x, y, fs, align = 'center') {
+    if (stage.used) return;
+    label(ctx, t('common.dragMe'), x, y, { size: fs, color: '#ffd34d', align });
+}
+
+// Horizontal strip: mouse drag scrolls it (touch scrolls natively), faded edges show there is more.
+function initStrip(el) {
+    const update = () => {
+        const max = el.scrollWidth - el.clientWidth;
+        el.classList.toggle('more-left', el.scrollLeft > 2);
+        el.classList.toggle('more-right', el.scrollLeft < max - 2);
+    };
+    el.addEventListener('scroll', update, { passive: true });
+    new ResizeObserver(update).observe(el);
+    new MutationObserver(update).observe(el, { childList: true, subtree: true, characterData: true });
+
+    let drag = null;
+    el.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return;
+        drag = { x: e.clientX, left: el.scrollLeft, moved: false, pointerId: e.pointerId };
+    });
+    el.addEventListener('pointermove', (e) => {
+        if (!drag || drag.pointerId !== e.pointerId) return;
+        const dx = e.clientX - drag.x;
+        if (!drag.moved && Math.abs(dx) > 5) {
+            drag.moved = true;
+            el.setPointerCapture(e.pointerId);
+            el.classList.add('dragging');
+        }
+        if (drag.moved) el.scrollLeft = drag.left - dx;
+    });
+    const stop = () => {
+        if (drag?.moved) {
+            // The click that ends a drag must not press the button under the pointer.
+            const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+            el.addEventListener('click', swallow, { capture: true, once: true });
+            setTimeout(() => el.removeEventListener('click', swallow, { capture: true }), 0);
+        }
+        drag = null;
+        el.classList.remove('dragging');
+    };
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
+    update();
+}
+
+function centerInStrip(strip, el, smooth = true) {
+    const s = strip.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const left = strip.scrollLeft + (r.left - s.left) - (s.width - r.width) / 2;
+    strip.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function initMenu(root) {
+    const btn = root.querySelector('.menu-btn');
+    const pop = root.querySelector('.menu-pop');
+    const set = (open) => {
+        pop.hidden = !open;
+        btn.setAttribute('aria-expanded', String(open));
+    };
+    btn.addEventListener('click', () => set(pop.hidden));
+    document.addEventListener('pointerdown', (e) => { if (!root.contains(e.target)) set(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+    return { close: () => set(false) };
 }
 
 function fontSize(w, min = 11, max = 16) { return clamp(Math.round(w / 45), min, max); }
@@ -407,11 +552,15 @@ function initNav() {
     });
     onLang(() => links.forEach((a, i) => { a.textContent = t(sections[i].dataset.chip); }));
 
+    initStrip(chips);
+    let activeId = null;
     const setActive = (id) => {
+        if (id === activeId) return;
+        activeId = id;
         links.forEach((a) => {
             const on = a.getAttribute('href') === `#${id}`;
             a.classList.toggle('active', on);
-            if (on) chips.scrollTo({ left: a.offsetLeft - (chips.clientWidth - a.offsetWidth) / 2, behavior: 'smooth' });
+            if (on) centerInStrip(chips, a);
         });
     };
 
@@ -421,9 +570,19 @@ function initNav() {
     sections.forEach((s) => io.observe(s));
 
     const bar = document.getElementById('progress-bar');
+    // After the page stops scrolling, bring the current chapter chip back into view if it was dragged away.
+    let settle = 0;
+    const keepActiveVisible = () => {
+        const a = links.find((l) => l.classList.contains('active'));
+        if (!a) return;
+        const s = chips.getBoundingClientRect(), r = a.getBoundingClientRect();
+        if (r.left < s.left + 8 || r.right > s.right - 8) centerInStrip(chips, a);
+    };
     const onScroll = () => {
         const max = document.documentElement.scrollHeight - window.innerHeight;
         bar.style.width = `${max > 0 ? (window.scrollY / max) * 100 : 0}%`;
+        clearTimeout(settle);
+        settle = setTimeout(keepActiveVisible, 150);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -577,11 +736,12 @@ function initMix() {
     const MIX_NAMES = { 1: 'red', 2: 'green', 4: 'blue', 3: 'yellow', 6: 'cyan', 5: 'magenta', 7: 'white' };
     const home = lights.map((l) => ({ x: l.x, y: l.y }));
     let targets = null;
-    let dragging = -1;
+    let grab = { x: 0, y: 0 };
 
     const radius = (w, h) => Math.min(w, h) * 0.27;
+    const knobR = (w, h) => clamp(radius(w, h) * 0.2, 14, 22);
 
-    const stage = new Stage(document.getElementById('mix-canvas'), (ctx, w, h) => {
+    const stage = new Stage(document.getElementById('mix-canvas'), (ctx, w, h, time) => {
         if (targets) {
             let done = true;
             lights.forEach((l, i) => {
@@ -624,25 +784,36 @@ function initMix() {
             const dark = mask === '3' || mask === '6' || mask === '7' || mask === '2';
             label(ctx, t(`ch2.${MIX_NAMES[mask]}`), s.x / s.n, s.y / s.n, { size: fs, color: dark ? '#111' : '#fff' });
         });
+
+        // A lamp knob in the middle of each light is what you drag.
+        const kr = knobR(w, h);
+        lights.forEach((l, i) => {
+            if (!l.on) return;
+            const x = l.x * w, y = l.y * h;
+            ctx.fillStyle = 'rgba(10,12,30,0.75)';
+            ctx.beginPath();
+            ctx.arc(x, y, kr * 0.62, 0, TAU);
+            ctx.fill();
+            ctx.fillStyle = rgba(l.rgb);
+            ctx.beginPath();
+            ctx.arc(x, y, kr * 0.36, 0, TAU);
+            ctx.fill();
+            drawGrip(ctx, stage, i, x, y, kr, time);
+        });
+        const first = lights.find((l) => l.on);
+        if (first) dragHint(ctx, stage, first.x * w, first.y * h + kr + fs, fs);
     }, { animate: true });
 
     attachDrag(stage, {
-        down: (p) => {
-            const r = radius(stage.w, stage.h);
-            let best = -1, bestD = Infinity;
-            lights.forEach((l, i) => {
-                if (!l.on) return;
-                const d = Math.hypot(p.x - l.x * stage.w, p.y - l.y * stage.h);
-                if (d < r && d < bestD) { best = i; bestD = d; }
-            });
-            dragging = best;
-            targets = null;
-            return best >= 0;
-        },
-        move: (p) => {
-            if (dragging < 0) return;
-            lights[dragging].x = clamp(p.x / stage.w, 0, 1);
-            lights[dragging].y = clamp(p.y / stage.h, 0, 1);
+        hit: (p, slop) => nearestHandle(p, slop, lights.flatMap((l, i) => (l.on ? [{ id: i, x: l.x * stage.w, y: l.y * stage.h, r: knobR(stage.w, stage.h) }] : []))),
+        move: (i, p, first) => {
+            const l = lights[i];
+            if (first) {
+                targets = null;
+                grab = { x: p.x - l.x * stage.w, y: p.y - l.y * stage.h };
+            }
+            l.x = clamp((p.x - grab.x) / stage.w, 0.03, 0.97);
+            l.y = clamp((p.y - grab.y) / stage.h, 0.03, 0.97);
         }
     });
 
@@ -792,8 +963,9 @@ function initBend() {
     const lightRow = document.getElementById('bend-light');
     const colourSlider = document.getElementById('bend-colour');
     const colourLabel = document.getElementById('bend-colour-label');
-    const hitSlider = document.getElementById('bend-hit');
-    const turnSlider = document.getElementById('bend-turn');
+    const shapeIcon = document.getElementById('bend-shape-icon');
+    const shapeName = document.getElementById('bend-shape-name');
+    const menu = initMenu(document.getElementById('bend-menu'));
     const bounceRow = document.getElementById('bend-bounces');
     const manyBtn = document.getElementById('bend-many');
     const extra = document.getElementById('bend-extra');
@@ -824,6 +996,43 @@ function initBend() {
     };
 
     const dropGeometry = (w, h) => ({ c: { x: w * 0.6, y: h * 0.46 }, r: Math.min(w * 0.24, h * 0.36) });
+    const torchSize = (w) => clamp(w / 28, 14, 26);
+    const turnKnob = (poly, c) => vec.add(poly[0], vec.scale(vec.norm(vec.sub(poly[0], c)), 26));
+    const dropSun = (w, h) => {
+        const { c, r } = dropGeometry(w, h);
+        return { x: clamp(w * 0.07, 26, 60), y: c.y - S.dropHit * r };
+    };
+
+    const handles = (w, h) => {
+        if (S.shape === 'drop') {
+            const sun = dropSun(w, h);
+            return [{ id: 'sun', x: sun.x, y: sun.y, r: torchSize(w) * 1.1 }];
+        }
+        const { poly, aim, c } = prismGeometry(w, h);
+        const knob = turnKnob(poly, c);
+        return [
+            { id: 'lamp', x: S.lamp.x * w, y: S.lamp.y * h, r: torchSize(w) * 1.4 },
+            { id: 'aim', x: aim.x, y: aim.y, r: 12 },
+            { id: 'turn', x: knob.x, y: knob.y, r: 14 }
+        ];
+    };
+
+    function drawTorch(ctx, x, y, ang, s) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(ang);
+        ctx.fillStyle = '#c9cfe8';
+        ctx.fillRect(-s * 1.6, -s * 0.35, s * 1.3, s * 0.7);
+        ctx.fillStyle = '#ffd34d';
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.35, -s * 0.6);
+        ctx.lineTo(s * 0.2, -s * 0.6);
+        ctx.lineTo(s * 0.2, s * 0.6);
+        ctx.lineTo(-s * 0.35, s * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
 
     const strokeSeg = (ctx, s) => {
         ctx.beginPath();
@@ -843,7 +1052,7 @@ function initBend() {
         ctx.restore();
     };
 
-    function drawPrism(ctx, w, h, fs) {
+    function drawPrism(ctx, w, h, fs, time) {
         const { poly, aim, c } = prismGeometry(w, h);
         const lamp = { x: S.lamp.x * w, y: S.lamp.y * h };
         const dir = vec.norm(vec.sub(aim, lamp));
@@ -880,7 +1089,7 @@ function initBend() {
         const entry = ref[0].b;
         label(ctx, t('ch3.step1'), entry.x - 10, entry.y - fs * 1.2, { size: fs - 1, align: 'right' });
         const last = ref[ref.length - 1];
-        label(ctx, t('ch3.step2'), last.a.x + 12, last.a.y - fs * 1.3, { size: fs - 1, align: 'left' });
+        label(ctx, t('ch3.step2'), last.a.x + 8, last.a.y + fs * 1.4, { size: fs - 1, align: 'left' });
 
         if (S.light === 'white' && traces.length > 1) {
             const redSeg = traces[traces.length - 1].segs.at(-1);
@@ -898,30 +1107,30 @@ function initBend() {
             label(ctx, t('ch3.violetMost'), lv.x, lv.y, { size: fs - 1, color: '#c9a2ff' });
         }
 
-        // Flashlight
-        const ang = Math.atan2(dir.y, dir.x);
-        const s = clamp(w / 28, 14, 26);
-        ctx.save();
-        ctx.translate(lamp.x, lamp.y);
-        ctx.rotate(ang);
-        ctx.fillStyle = '#c9cfe8';
-        ctx.fillRect(-s * 1.6, -s * 0.35, s * 1.3, s * 0.7);
+        const s = torchSize(w);
+        drawTorch(ctx, lamp.x, lamp.y, Math.atan2(dir.y, dir.x), s);
+        drawGrip(ctx, stage, 'lamp', lamp.x, lamp.y, s * 1.4, time);
+        dragHint(ctx, stage, lamp.x, lamp.y - s * 1.4 - fs * 0.8, fs);
+
         ctx.fillStyle = '#ffd34d';
         ctx.beginPath();
-        ctx.moveTo(-s * 0.35, -s * 0.6);
-        ctx.lineTo(s * 0.2, -s * 0.6);
-        ctx.lineTo(s * 0.2, s * 0.6);
-        ctx.lineTo(-s * 0.35, s * 0.6);
-        ctx.closePath();
+        ctx.arc(aim.x, aim.y, 4, 0, TAU);
         ctx.fill();
-        ctx.restore();
-        ctx.strokeStyle = 'rgba(255,211,77,0.6)';
-        ctx.setLineDash([3, 4]);
+        drawGrip(ctx, stage, 'aim', aim.x, aim.y, 12, time);
+
+        const knob = turnKnob(poly, c);
+        ctx.strokeStyle = 'rgba(220,235,255,0.6)';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(lamp.x, lamp.y, s * 1.4, 0, TAU);
+        ctx.moveTo(poly[0].x, poly[0].y);
+        ctx.lineTo(knob.x, knob.y);
         ctx.stroke();
-        ctx.setLineDash([]);
-        label(ctx, t('ch3.torch'), lamp.x, lamp.y + s * 1.4 + fs, { size: fs - 1, color: '#ffd34d' });
+        ctx.fillStyle = '#dbe6ff';
+        ctx.beginPath();
+        ctx.arc(knob.x, knob.y, 7, 0, TAU);
+        ctx.fill();
+        drawGrip(ctx, stage, 'turn', knob.x, knob.y, 14, time);
+        label(ctx, `↻ ${t('ch3.turn')}`, knob.x + 22, knob.y, { size: fs - 1, color: '#ffd34d', align: 'left' });
 
         S.result = { shape: 'prism' };
     }
@@ -947,7 +1156,9 @@ function initBend() {
     function drawHistogram(ctx, w, h, fs) {
         const bins = histogram(S.k, S.material);
         const iw = Math.min(250, w * 0.34), ih = Math.min(120, h * 0.27);
-        const x0 = w - iw - 10, y0 = h - ih - 10;
+        // On narrow screens the one-bounce exit sits bottom right, so the chart moves to the top.
+        const atTop = S.k === 1 && w < 600;
+        const x0 = w - iw - 10, y0 = atTop ? 10 : h - ih - 10;
         ctx.fillStyle = 'rgba(20,28,70,0.92)';
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.beginPath();
@@ -969,7 +1180,7 @@ function initBend() {
         label(ctx, '60°', x0 + iw - pad, y0 + ih - bottom / 2, { size: fs - 4, align: 'right', weight: 600 });
     }
 
-    function drawDrop(ctx, w, h, fs) {
+    function drawDrop(ctx, w, h, fs, time) {
         const { c, r } = dropGeometry(w, h);
         const nOf = (nm) => refractiveIndex(S.material, nm, 1);
 
@@ -997,10 +1208,14 @@ function initBend() {
             ctx.globalCompositeOperation = 'source-over';
         }
 
-        const origin = { x: -10, y: c.y - S.dropHit * r };
+        const origin = dropSun(w, h);
+        const sunR = torchSize(w) * 0.6;
         const traces = wavelengths().map((nm) => ({ nm, ...traceDrop(origin, dir, c, r, nOf(nm), S.k) }));
         whiteBeam(ctx, traces[0].segs[0], S.light === 'one' ? wavelengthToRGB(S.nm) : null);
-        label(ctx, t('ch3.sunlight'), 12, origin.y - fs, { size: fs, align: 'left' });
+        drawSunDisk(ctx, origin.x, origin.y, sunR, false);
+        drawGrip(ctx, stage, 'sun', origin.x, origin.y, torchSize(w) * 1.1, time);
+        label(ctx, t('ch3.sunlight'), origin.x + sunR * 2, origin.y - fs * 1.1, { size: fs, align: 'left' });
+        dragHint(ctx, stage, origin.x + sunR * 2, origin.y + fs * 1.2, fs, 'left');
 
         ctx.globalCompositeOperation = 'lighter';
         ctx.lineWidth = S.light === 'one' ? 3.5 : Math.max(2, w / 300);
@@ -1069,14 +1284,14 @@ function initBend() {
         };
     }
 
-    const stage = new Stage(canvas, (ctx, w, h) => {
+    const stage = new Stage(canvas, (ctx, w, h, time) => {
         const fs = fontSize(w, 11, 15);
         ctx.fillStyle = '#060a1c';
         ctx.fillRect(0, 0, w, h);
-        if (S.shape === 'prism') drawPrism(ctx, w, h, fs);
-        else drawDrop(ctx, w, h, fs);
+        if (S.shape === 'prism') drawPrism(ctx, w, h, fs, time);
+        else drawDrop(ctx, w, h, fs, time);
         renderExplain();
-    });
+    }, { animate: true });
 
     function renderExplain() {
         const R = S.result;
@@ -1099,10 +1314,21 @@ function initBend() {
         holdHeight(explain);
     }
 
+    const SHAPE_ICONS = {
+        prism: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 22 20H2Z" fill="rgba(170,200,255,0.35)" stroke="#dbe6ff" stroke-width="2" stroke-linejoin="round"/></svg>',
+        drop: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5C8 8 5.5 11.5 5.5 15a6.5 6.5 0 0 0 13 0c0-3.5-2.5-7-6.5-12.5Z" fill="rgba(90,170,255,0.4)" stroke="#bfe0ff" stroke-width="2" stroke-linejoin="round"/></svg>'
+    };
+    const renderShape = () => {
+        shapeIcon.innerHTML = SHAPE_ICONS[S.shape];
+        shapeName.textContent = t('ch3.shapeName', { shape: t(`ch3.${S.shape}`), material: t(`ch3.${S.material}`).toLowerCase() });
+    };
+
     const syncShape = () => {
-        hitSlider.value = S.shape === 'prism' ? Math.round(S.prismHit * 100) : Math.round(50 + (S.dropHit / 0.98) * 50);
-        showVariant(extra, S.shape);
+        const drop = S.shape === 'drop';
+        extra.classList.toggle('off', !drop);
+        extra.inert = !drop;
         showVariant(hints, S.shape);
+        renderShape();
         stage.request();
     };
 
@@ -1120,6 +1346,8 @@ function initBend() {
         if (!btn) return;
         S.material = btn.dataset.material;
         setSegment(materialRow, btn);
+        renderShape();
+        menu.close();
         stage.request();
     });
     lightRow.addEventListener('click', (e) => {
@@ -1138,16 +1366,6 @@ function initBend() {
         renderColour();
         stage.request();
     });
-    hitSlider.addEventListener('input', () => {
-        const v = Number(hitSlider.value) / 100;
-        if (S.shape === 'prism') S.prismHit = v;
-        else S.dropHit = clamp((v - 0.5) * 2 * 0.98, -0.98, 0.98);
-        stage.request();
-    });
-    turnSlider.addEventListener('input', () => {
-        S.turn = Number(turnSlider.value);
-        stage.request();
-    });
     bounceRow.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-bounces]');
         if (!btn) return;
@@ -1163,31 +1381,29 @@ function initBend() {
     });
 
     attachDrag(stage, {
-        down: (p) => {
-            if (S.shape === 'drop') { setDrop(p); return true; }
-            const { poly } = prismGeometry(stage.w, stage.h);
-            if (p.x > Math.min(...poly.map((v) => v.x))) return false;
-            moveLamp(p);
-            return true;
-        },
-        move: (p) => (S.shape === 'drop' ? setDrop(p) : moveLamp(p))
+        hit: (p, slop) => nearestHandle(p, slop, handles(stage.w, stage.h)),
+        move: (id, p) => {
+            const { w, h } = stage;
+            if (id === 'sun') {
+                const { c, r } = dropGeometry(w, h);
+                S.dropHit = clamp((c.y - p.y) / r, -0.98, 0.98);
+                return;
+            }
+            const { poly, c } = prismGeometry(w, h);
+            if (id === 'lamp') {
+                const maxX = Math.min(...poly.map((v) => v.x)) - 20;
+                S.lamp = { x: clamp(p.x, 12, maxX) / w, y: clamp(p.y / h, 0.05, 0.95) };
+            } else if (id === 'aim') {
+                const edge = vec.sub(poly[1], poly[0]);
+                const f = vec.dot(vec.sub(p, poly[0]), edge) / vec.dot(edge, edge);
+                S.prismHit = clamp((f - 0.18) / 0.7, 0, 1);
+            } else if (id === 'turn') {
+                S.turn = clamp(wrap180(Math.atan2(p.y - c.y, p.x - c.x) / DEG + 90), -35, 35);
+            }
+        }
     });
 
-    function moveLamp(p) {
-        const { poly } = prismGeometry(stage.w, stage.h);
-        const maxX = Math.min(...poly.map((v) => v.x)) - 20;
-        S.lamp = { x: clamp(p.x, 12, maxX) / stage.w, y: clamp(p.y / stage.h, 0.05, 0.95) };
-        stage.request();
-    }
-
-    function setDrop(p) {
-        const { c, r } = dropGeometry(stage.w, stage.h);
-        S.dropHit = clamp((c.y - p.y) / r, -0.98, 0.98);
-        hitSlider.value = Math.round(50 + (S.dropHit / 0.98) * 50);
-        stage.request();
-    }
-
-    onLang(() => { renderColour(); stage.request(); });
+    onLang(() => { renderColour(); renderShape(); stage.request(); });
     syncShape();
 }
 
@@ -1994,6 +2210,11 @@ function initLab() {
     const helpersBtn = $('lab-helpers');
     const explain = $('lab-explain');
     const presetRow = $('lab-presets');
+    const tabs = $('lab-tabs');
+    const panels = $('lab-panels');
+    const lightTab = $('lab-tab-light');
+    const lightTitle = $('lab-title-light');
+    initStrip(presetRow);
 
     const L = { ...presetState('normal'), helpers: true };
 
@@ -2001,7 +2222,14 @@ function initLab() {
     const drop = new Stage($('drop-canvas'), (ctx, w, h, time) => drawDropView(ctx, w, h, time, L), { animate: true });
 
     // Map seen from above: you in the middle looking up, rain ahead (or all around below the plane).
+    const sunGripR = (sun) => Math.max(16, sun.r * 2.2);
     const mapGeo = (w, h) => ({ c: { x: w / 2, y: h * 0.56 }, R: Math.min(w * 0.4, h * 0.34) });
+    // dir 0 = straight behind you (down on the map), positive = to your right.
+    const mapSun = (w, h) => {
+        const { c, R } = mapGeo(w, h);
+        const a = (90 - L.dir) * DEG;
+        return { x: c.x + R * Math.cos(a), y: c.y + R * Math.sin(a), r: Math.max(8, R * 0.08) };
+    };
     const map = new Stage($('map-canvas'), (ctx, w, h, time) => {
         const fs = fontSize(w, 11, 14);
         const { c, R } = mapGeo(w, h);
@@ -2043,9 +2271,8 @@ function initLab() {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Sun position: dir 0 = straight behind you (down on the map), positive = to your right.
         const sunScreen = (90 - L.dir) * DEG;
-        const sun = { x: c.x + R * Math.cos(sunScreen), y: c.y + R * Math.sin(sunScreen) };
+        const sun = mapSun(w, h);
         const anti = { x: -Math.cos(sunScreen), y: -Math.sin(sunScreen) };
 
         ctx.strokeStyle = moon ? 'rgba(220,230,255,0.25)' : 'rgba(255,230,140,0.35)';
@@ -2155,10 +2382,10 @@ function initLab() {
             label(ctx, t('ch5.you'), c.x + 14, c.y + fs, { size: fs, align: 'left' });
         }
 
-        const sunR = Math.max(8, R * 0.08);
-        drawSunDisk(ctx, sun.x, sun.y, sunR, moon, lerp(0.4, 1, L.clear / 100));
+        drawSunDisk(ctx, sun.x, sun.y, sun.r, moon, lerp(0.4, 1, L.clear / 100));
+        drawGrip(ctx, map, 'sun', sun.x, sun.y, sunGripR(sun), time);
         const below = sun.y < h * 0.7;
-        label(ctx, t(moon ? 'ch5.moonLabel' : 'ch5.sun'), sun.x, sun.y + (below ? 1 : -1) * (sunR * 2 + fs * 0.4), { size: fs });
+        label(ctx, t(moon ? 'ch5.moonLabel' : 'ch5.sun'), sun.x, sun.y + (below ? 1 : -1) * (sunGripR(sun) + fs * 0.8), { size: fs });
     }, { animate: true });
 
     // Side view: a vertical cut through you and the sun.
@@ -2167,6 +2394,12 @@ function initLab() {
         const ground = h * 0.84;
         const personH = h * 0.2;
         return { ground, personH, eye: { x: w * 0.34, y: ground - personH * 0.88 } };
+    };
+    const sideSun = (w, h) => {
+        const { eye } = sideGeo(w, h);
+        const e = L.elev * DEG;
+        const dist = Math.min(w * 0.26, (eye.y - 26) / Math.max(Math.sin(e), 1e-3));
+        return { x: eye.x - Math.cos(e) * dist, y: eye.y - Math.sin(e) * dist, r: h * 0.03 };
     };
     const side = new Stage($('side-canvas'), (ctx, w, h, time) => {
         const fs = fontSize(w, 11, 14);
@@ -2205,8 +2438,7 @@ function initLab() {
         }
 
         const sunDir = { x: Math.cos(e), y: Math.sin(e) };
-        const sunDist = Math.min(w * 0.26, (eye.y - 26) / Math.max(Math.sin(e), 1e-3));
-        const sun = { x: eye.x - sunDir.x * sunDist, y: eye.y - sunDir.y * sunDist };
+        const sun = sideSun(w, h);
         const perp = { x: -sunDir.y, y: sunDir.x };
         ctx.strokeStyle = night ? 'rgba(220,230,255,0.25)' : `rgba(255,240,160,${0.12 + 0.25 * L.clear / 100})`;
         ctx.lineWidth = 1.5;
@@ -2294,8 +2526,10 @@ function initLab() {
             });
         }
 
-        drawSunDisk(ctx, sun.x, sun.y, h * 0.03, night, lerp(0.4, 1, L.clear / 100));
-        label(ctx, t(night ? 'ch5.moonLabel' : 'ch5.sun'), sun.x, sun.y - h * 0.08, { size: fs });
+        drawSunDisk(ctx, sun.x, sun.y, sun.r, night, lerp(0.4, 1, L.clear / 100));
+        const gripR = sunGripR(sun);
+        drawGrip(ctx, side, 'sun', sun.x, sun.y, gripR, time);
+        label(ctx, t(night ? 'ch5.moonLabel' : 'ch5.sun'), sun.x, Math.max(fs, sun.y - gripR - fs * 0.7), { size: fs });
 
         if (plane) {
             drawPlaneSide(ctx, eye.x, eye.y, Math.max(22, w * 0.09));
@@ -2310,6 +2544,8 @@ function initLab() {
         const moon = L.source === 'moon';
         const mm = dropSizeMm(L.sizeV);
         elevName.textContent = t(moon ? 'ch5.moonHeight' : 'ch5.sunHeight');
+        lightTab.textContent = t(moon ? 'ch5.tabMoon' : 'ch5.tabSun');
+        lightTitle.textContent = lightTab.textContent;
         dirName.textContent = t(moon ? 'ch5.moonDir' : 'ch5.sunDir');
         valueLabels.elev.textContent = `${L.elev}°`;
         valueLabels.dir.textContent = t(`ch5.dir.${directionKey(L.dir)}`);
@@ -2413,9 +2649,20 @@ function initLab() {
         return [key, b];
     });
 
+    tabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-tab]');
+        if (!btn) return;
+        [...tabs.children].forEach((b) => {
+            b.classList.toggle('on', b === btn);
+            b.setAttribute('aria-selected', String(b === btn));
+        });
+        [...panels.children].forEach((el) => el.classList.toggle('on', el.dataset.tab === btn.dataset.tab));
+    });
+
+    const sunHit = (sun, p, slop) => nearestHandle(p, slop, [{ id: 'sun', x: sun.x, y: sun.y, r: sunGripR(sun) }]);
     attachDrag(map, {
-        down: (p) => { setDirFrom(p); return true; },
-        move: setDirFrom
+        hit: (p, slop) => sunHit(mapSun(map.w, map.h), p, slop),
+        move: (id, p) => setDirFrom(p)
     });
     function setDirFrom(p) {
         const { c } = mapGeo(map.w, map.h);
@@ -2425,8 +2672,8 @@ function initLab() {
     }
 
     attachDrag(side, {
-        down: (p) => { setElevFrom(p); return true; },
-        move: setElevFrom
+        hit: (p, slop) => sunHit(sideSun(side.w, side.h), p, slop),
+        move: (id, p) => setElevFrom(p)
     });
     function setElevFrom(p) {
         const { eye } = sideGeo(side.w, side.h);
@@ -2519,11 +2766,10 @@ function initSpectrum() {
     marker.className = 'spectrum-marker';
 
     const segs = REGIONS.map((r) => {
-        const seg = document.createElement('button');
+        const seg = document.createElement('div');
         seg.className = 'spectrum-seg' + (r.id === 'visible' ? ' visible-seg' : '');
         seg.style.flex = `${r.to - r.from} 0 0`;
         if (r.color) seg.style.background = r.color;
-        seg.addEventListener('click', () => jump((r.from + r.to) / 2));
         bar.appendChild(seg);
 
         const panel = document.createElement('div');
@@ -2555,6 +2801,22 @@ function initSpectrum() {
             if (show) lastX = x;
         });
     }).observe(iconsBox);
+
+    // Tap or slide sideways along the bar. Up and down still scrolls the page.
+    const fromBar = (e) => {
+        const rect = bar.getBoundingClientRect();
+        slider.value = Math.round(clamp((e.clientX - rect.left) / rect.width, 0, 1) * 1000);
+        update();
+    };
+    // A touch only counts once it slides sideways or lifts; if the page starts scrolling it is cancelled.
+    bar.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        bar.setPointerCapture(e.pointerId);
+        if (e.pointerType === 'mouse') fromBar(e);
+    });
+    bar.addEventListener('pointermove', (e) => { if (bar.hasPointerCapture(e.pointerId)) fromBar(e); });
+    bar.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') fromBar(e); });
+    bar.setAttribute('aria-hidden', 'true');
 
     function jump(log) {
         slider.value = toSlider(log);
@@ -2602,7 +2864,6 @@ function initSpectrum() {
     function renderPanels() {
         REGIONS.forEach((r, i) => {
             segs[i].innerHTML = `<span>${t(`regions.${r.id}.short`)}</span>`;
-            segs[i].setAttribute('aria-label', t(`regions.${r.id}.name`));
             const devices = DEVICES.filter((d) => d.log >= r.from && d.log <= r.to)
                 .map((d) => `<span class="device">${d.icon} ${t(`devices.${d.id}`)}</span>`).join('');
             textStack.children[i].innerHTML = `<div>
@@ -2659,30 +2920,113 @@ function boostSaturation(rgb, amount) {
     return rgb.map((v) => Math.round(clamp(l + (v - l) * amount, 0, 255)));
 }
 
+// Rod-only vision: brightness follows the night-vision curve, which peaks in blue-green.
+function greyByCurve(nm, peak, width) {
+    const g = Math.round(30 + 210 * Math.exp(-((nm - peak) ** 2) / (2 * width * width)));
+    return [g, g, g];
+}
+
+// Missing blue cones: short waves look teal, long waves pink-red, with a grey point near yellow.
+function tritan(nm) {
+    const teal = [40, 175, 195], gray = [215, 215, 215], pink = [240, 85, 110];
+    const k = clamp((nm - 545) / 50, 0, 1);
+    const rgb = k < 0.5 ? mixRGB(teal, gray, k * 2) : mixRGB(gray, pink, (k - 0.5) * 2);
+    let bright = 1;
+    if (nm < 440) bright = 0.3 + 0.7 * (nm - 385) / 55;
+    if (nm > 650) bright = Math.max(0.25, 1 - (nm - 650) / 90);
+    return rgb.map((v) => Math.round(v * bright));
+}
+
+const UV = { uv: true };
+const visible = (nm) => ({ rgb: wavelengthToRGB(nm) });
+const fadeAbove = (rgb, nm, from, to, min = 0.08) => {
+    const k = clamp(1 - (nm - from) / (to - from), min, 1);
+    return rgb.map((v) => Math.round(v * k + 12 * (1 - k)));
+};
+
+// group: 'people' or 'animals'. see(nm) returns null (invisible), { uv }, { ir } or { rgb }.
+// steps: colours change in steps instead of smoothly. mosaic: drawn through a compound eye.
 const ANIMALS = [
-    { id: 'human', icon: '🧒', see: (nm) => (nm < 385 || nm > 720 ? null : { rgb: wavelengthToRGB(nm) }) },
+    { id: 'human', group: 'people', icon: '🧒', see: (nm) => (nm < 385 || nm > 720 ? null : visible(nm)) },
+    { id: 'protanopia', group: 'people', icon: '🧑', see: (nm) => (nm < 385 || nm > 690 ? null : { rgb: dichromat(nm, 492, 660) }) },
+    { id: 'deuteranopia', group: 'people', icon: '🧑', see: (nm) => (nm < 385 || nm > 715 ? null : { rgb: dichromat(nm, 498, 740) }) },
     {
-        id: 'bee', icon: '🐝',
+        id: 'deuteranomaly', group: 'people', icon: '🧑',
+        see: (nm) => (nm < 385 || nm > 720 ? null : { rgb: mixRGB(wavelengthToRGB(nm), dichromat(nm, 498, 740), 0.65) })
+    },
+    { id: 'tritanopia', group: 'people', icon: '🧑', see: (nm) => (nm < 385 || nm > 715 ? null : { rgb: tritan(nm) }) },
+    { id: 'achromatopsia', group: 'people', icon: '🧑', see: (nm) => (nm < 385 || nm > 650 ? null : { rgb: greyByCurve(nm, 505, 55) }) },
+
+    { id: 'monkey', group: 'animals', icon: '🐒', see: (nm) => (nm < 385 || nm > 720 ? null : visible(nm)) },
+    { id: 'dog', group: 'animals', icon: '🐕', see: (nm) => (nm < 400 || nm > 700 ? null : { rgb: dichromat(nm, 480, 690) }) },
+    {
+        id: 'reindeer', group: 'animals', icon: '🦌',
         see(nm) {
-            if (nm < 300) return null;
-            if (nm < 380) return { uv: true };
-            if (nm < 560) return { rgb: wavelengthToRGB(nm) };
-            const fade = clamp(1 - (nm - 560) / 90, 0.08, 1);
-            return { rgb: wavelengthToRGB(nm).map((v) => Math.round(v * fade + 12 * (1 - fade))) };
+            if (nm < 320 || nm > 700) return null;
+            if (nm < 380) return UV;
+            return { rgb: dichromat(nm, 480, 680) };
         }
     },
     {
-        id: 'bird', icon: '🐦',
+        id: 'bird', group: 'animals', icon: '🐦',
         see(nm) {
             if (nm < 320 || nm > 720) return null;
-            if (nm < 385) return { uv: true };
+            if (nm < 385) return UV;
             return { rgb: boostSaturation(wavelengthToRGB(nm), 1.3) };
         }
     },
-    { id: 'dog', icon: '🐕', see: (nm) => (nm < 400 || nm > 700 ? null : { rgb: dichromat(nm, 480, 690) }) },
-    { id: 'colourblind', icon: '👦', see: (nm) => (nm < 385 || nm > 715 ? null : { rgb: dichromat(nm, 495, 740) }) },
     {
-        id: 'snake', icon: '🐍',
+        id: 'eagle', group: 'animals', icon: '🦅',
+        see(nm) {
+            if (nm < 360 || nm > 720) return null;
+            return { rgb: boostSaturation(wavelengthToRGB(Math.max(nm, 385)), 1.45) };
+        }
+    },
+    {
+        id: 'bee', group: 'animals', icon: '🐝',
+        see(nm) {
+            if (nm < 300) return null;
+            if (nm < 380) return UV;
+            if (nm < 560) return visible(nm);
+            return { rgb: fadeAbove(wavelengthToRGB(nm), nm, 560, 650) };
+        }
+    },
+    {
+        id: 'butterfly', group: 'animals', icon: '🦋',
+        see(nm) {
+            if (nm < 300 || nm > 720) return null;
+            if (nm < 380) return UV;
+            return { rgb: boostSaturation(wavelengthToRGB(nm), 1.35) };
+        }
+    },
+    {
+        id: 'fly', group: 'animals', icon: '🪰', steps: 25, mosaic: true,
+        see(nm) {
+            if (nm < 310 || nm > 660) return null;
+            if (nm < 380) return UV;
+            return { rgb: fadeAbove(wavelengthToRGB(nm), nm, 580, 660, 0.15) };
+        }
+    },
+    {
+        id: 'spider', group: 'animals', icon: '🕷️',
+        see(nm) {
+            if (nm < 320 || nm > 680) return null;
+            if (nm < 380) return UV;
+            const rgb = mixRGB([70, 95, 210], [110, 225, 120], smoothstep(390, 480, nm));
+            return { rgb: fadeAbove(rgb, nm, 590, 680, 0.12) };
+        }
+    },
+    {
+        id: 'goldfish', group: 'animals', icon: '🐟',
+        see(nm) {
+            if (nm < 330 || nm > 780) return null;
+            if (nm < 380) return UV;
+            if (nm > 720) return { ir: true };
+            return { rgb: boostSaturation(wavelengthToRGB(nm), 1.15) };
+        }
+    },
+    {
+        id: 'snake', group: 'animals', icon: '🐍',
         see(nm) {
             if (nm < 400) return null;
             if (nm > 720) return { ir: true };
@@ -2690,22 +3034,22 @@ const ANIMALS = [
         }
     },
     {
-        id: 'shrimp', icon: '🦐',
+        id: 'shrimp', group: 'animals', icon: '🦐', steps: 28,
         see(nm) {
             if (nm < 300 || nm > 720) return null;
-            if (nm < 380) return { uv: true };
-            const steps = 12;
-            const i = Math.min(steps - 1, Math.floor((nm - 380) / (340 / steps)));
-            return { rgb: boostSaturation(wavelengthToRGB(380 + (i + 0.5) * 340 / steps), 1.2) };
+            if (nm < 380) return UV;
+            return { rgb: boostSaturation(wavelengthToRGB(nm), 1.2) };
         }
-    }
+    },
+    { id: 'octopus', group: 'animals', icon: '🐙', see: (nm) => (nm < 380 || nm > 640 ? null : { rgb: greyByCurve(nm, 485, 45) }) }
 ];
 
 function initAnimals() {
-    const row = document.getElementById('animal-buttons');
+    const strip = document.getElementById('animal-buttons');
     const info = document.getElementById('animal-info');
     const compareBtn = document.getElementById('animal-compare');
-    const state = { animal: ANIMALS[1], compare: true };
+    const state = { animal: ANIMALS.find((a) => a.id === 'bee'), compare: true };
+    initStrip(strip);
 
     // Wavelength -> position across the band: UV inside violet, IR outside red.
     const radial = (nm) => {
@@ -2731,10 +3075,14 @@ function initAnimals() {
 
         const drawHalf = (animal, a0, a1) => {
             const step = 4;
+            let inner = Infinity, outer = 0;
             for (let nm = 300; nm < 1000; nm += step) {
-                const seen = animal.see(nm + step / 2);
+                const mid = nm + step / 2;
+                const seen = animal.see(mid);
                 if (!seen) continue;
                 const r0 = rOf(nm), r1 = rOf(nm + step);
+                inner = Math.min(inner, r0);
+                outer = Math.max(outer, r1);
                 let style;
                 if (seen.uv) {
                     const hue = 280 + 30 * Math.sin(time * 2.5 + nm * 0.15);
@@ -2742,7 +3090,8 @@ function initAnimals() {
                 } else if (seen.ir) {
                     style = `hsla(12,95%,${30 + 12 * Math.sin(time * 3 + nm * 0.05)}%,0.55)`;
                 } else {
-                    style = rgba(seen.rgb);
+                    const stepped = animal.steps && animal.see(380 + (Math.floor((mid - 380) / animal.steps) + 0.5) * animal.steps);
+                    style = rgba(stepped?.rgb || seen.rgb);
                 }
                 ctx.strokeStyle = style;
                 ctx.lineWidth = r1 - r0 + 0.8;
@@ -2761,6 +3110,28 @@ function initAnimals() {
                     ctx.fill();
                 }
             }
+            if (animal.mosaic) drawMosaic(a0, a1, inner, outer);
+        };
+
+        // A compound eye: thousands of tiny lenses, each seeing one blurry dot.
+        const drawMosaic = (a0, a1, inner, outer) => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, outer, a0, a1);
+            ctx.arc(cx, cy, inner, a1, a0, true);
+            ctx.closePath();
+            ctx.clip();
+            const cell = Math.max(7, R1 * 0.045);
+            ctx.strokeStyle = 'rgba(10,12,30,0.45)';
+            ctx.lineWidth = 1.5;
+            for (let y = cy - R1 - cell, row = 0; y < cy + cell; y += cell * 0.87, row++) {
+                for (let x = cx - R1 - cell + (row % 2) * cell / 2; x < cx + R1 + cell; x += cell) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, cell / 2, 0, TAU);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
         };
 
         if (split) {
@@ -2783,11 +3154,18 @@ function initAnimals() {
         emoji(ctx, state.animal.icon, cx, cy - R0 * 0.42, R0 * 0.55);
     }, { animate: true });
 
-    const buttons = ANIMALS.map((animal) => {
+    const groupLabels = {};
+    const buttons = ANIMALS.map((animal, i) => {
+        if (i === 0 || ANIMALS[i - 1].group !== animal.group) {
+            const g = document.createElement('span');
+            g.className = 'strip-label';
+            strip.appendChild(g);
+            groupLabels[animal.group] = g;
+        }
         const btn = document.createElement('button');
         btn.className = 'btn toggle small-btn';
-        btn.addEventListener('click', () => select(animal));
-        row.appendChild(btn);
+        btn.addEventListener('click', () => select(animal, true));
+        strip.appendChild(btn);
 
         const panel = document.createElement('div');
         panel.dataset.animal = animal.id;
@@ -2795,9 +3173,10 @@ function initAnimals() {
         return btn;
     });
 
-    function select(animal) {
+    function select(animal, smooth) {
         state.animal = animal;
         buttons.forEach((b, i) => b.classList.toggle('on', ANIMALS[i] === animal));
+        centerInStrip(strip, buttons[ANIMALS.indexOf(animal)], smooth);
         showVariant(info, animal.id, 'animal');
         stage.request();
     }
@@ -2808,11 +3187,13 @@ function initAnimals() {
     });
 
     onLang(() => {
+        Object.entries(groupLabels).forEach(([group, el]) => { el.textContent = t(`ch7.groups.${group}`); });
+        compareBtn.title = t('ch7.compare');
         ANIMALS.forEach((animal, i) => {
             buttons[i].textContent = `${animal.icon} ${t(`animals.${animal.id}.name`)}`;
             info.children[i].innerHTML = `<h3>${t(`animals.${animal.id}.title`)}</h3><p>${t(`animals.${animal.id}.text`)}</p>`;
         });
-        select(state.animal);
+        select(state.animal, false);
     });
 }
 

@@ -20,7 +20,7 @@
                 <button type="button" data-lang="nb">NO</button>
             </div>
         </div>
-        <div class="chips" id="chapter-chips"></div>
+        <div class="chips strip" id="chapter-chips"></div>
         <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
     </nav>
 
@@ -46,16 +46,13 @@
             <div class="chapter-head"><span class="chapter-no">1</span><h2 data-i18n="ch1.title"></h2></div>
             <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch1.bubble"></div></div>
             <div class="widget">
-                <canvas id="wave-canvas" class="canvas-wave" data-i18n-aria="ch1.canvasLabel"></canvas>
-                <div class="controls">
-                    <label class="slider-label" for="wave-slider"><span data-i18n="common.wavelength"></span>: <b id="wave-nm"></b> &middot; <b id="wave-name"></b></label>
-                    <input type="range" id="wave-slider" min="380" max="750" value="550" step="1" class="rainbow-range">
-                    <div class="slider-ends"><span data-i18n="common.shortWaves"></span><span data-i18n="common.longWaves"></span></div>
-                </div>
-                <div class="readouts">
-                    <div class="readout"><span class="readout-label" data-i18n="ch1.vib"></span><span class="readout-value" id="wave-freq"></span><span class="readout-sub" data-i18n="ch1.vibSub"></span></div>
-                    <div class="readout"><span class="readout-label" data-i18n="ch1.hair"></span><span class="readout-value" id="wave-hair"></span><span class="readout-sub" data-i18n="ch1.hairSub"></span></div>
-                    <div class="readout"><span class="readout-label" data-i18n="ch1.energy"></span><div class="meter"><div id="wave-energy"></div></div><span class="readout-sub" data-i18n="ch1.energySub"></span></div>
+                <div class="viz">
+                    <canvas id="wave-canvas" class="canvas-wave" data-i18n-aria="ch1.canvasLabel"></canvas>
+                    <div class="dock">
+                        <label class="slider-label" for="wave-slider"><span data-i18n="common.wavelength"></span>: <b id="wave-nm"></b> &middot; <b id="wave-name"></b></label>
+                        <input type="range" id="wave-slider" min="380" max="750" value="550" step="1" class="rainbow-range">
+                        <div class="slider-ends"><span data-i18n="common.shortWaves"></span><span data-i18n="common.longWaves"></span></div>
+                    </div>
                 </div>
                 <div class="challenge" id="wave-challenge">
                     <div class="challenge-swatch" id="challenge-swatch"></div>
@@ -65,6 +62,11 @@
                         <span class="challenge-score"><span data-i18n="ch1.score"></span>: <b id="challenge-score">0</b></span>
                     </div>
                     <button class="btn" id="challenge-btn"></button>
+                </div>
+                <div class="readouts">
+                    <div class="readout"><span class="readout-label" data-i18n="ch1.vib"></span><span class="readout-value" id="wave-freq"></span><span class="readout-sub" data-i18n="ch1.vibSub"></span></div>
+                    <div class="readout"><span class="readout-label" data-i18n="ch1.hair"></span><span class="readout-value" id="wave-hair"></span><span class="readout-sub" data-i18n="ch1.hairSub"></span></div>
+                    <div class="readout"><span class="readout-label" data-i18n="ch1.energy"></span><div class="meter"><div id="wave-energy"></div></div><span class="readout-sub" data-i18n="ch1.energySub"></span></div>
                 </div>
             </div>
             <div class="facts" data-facts="ch1"></div>
@@ -77,22 +79,28 @@
             <div class="two-col">
                 <div class="widget">
                     <h3 class="widget-title" data-i18n="ch2.mixTitle"></h3>
-                    <canvas id="mix-canvas" class="canvas-mix touch-canvas" data-i18n-aria="ch2.mixLabel"></canvas>
-                    <div class="button-row">
-                        <button class="btn toggle on" data-light="0" style="--tc:#ff3b3b" data-i18n="ch2.red"></button>
-                        <button class="btn toggle on" data-light="1" style="--tc:#32e05a" data-i18n="ch2.green"></button>
-                        <button class="btn toggle on" data-light="2" style="--tc:#3b7bff" data-i18n="ch2.blue"></button>
-                        <button class="btn" id="mix-gather" data-i18n="ch2.together"></button>
-                        <button class="btn" id="mix-spread" data-i18n="ch2.apart"></button>
+                    <div class="viz">
+                        <canvas id="mix-canvas" class="canvas-mix" data-i18n-aria="ch2.mixLabel"></canvas>
+                        <div class="dock button-row">
+                            <button class="btn toggle small-btn on" data-light="0" style="--tc:#ff3b3b" data-i18n="ch2.red"></button>
+                            <button class="btn toggle small-btn on" data-light="1" style="--tc:#32e05a" data-i18n="ch2.green"></button>
+                            <button class="btn toggle small-btn on" data-light="2" style="--tc:#3b7bff" data-i18n="ch2.blue"></button>
+                            <button class="btn small-btn" id="mix-gather" data-i18n="ch2.together"></button>
+                            <button class="btn small-btn" id="mix-spread" data-i18n="ch2.apart"></button>
+                        </div>
                     </div>
                     <p class="hint" data-i18n="ch2.mixHint"></p>
                     <p class="small" data-i18n="ch2.mixNote"></p>
                 </div>
                 <div class="widget">
                     <h3 class="widget-title" data-i18n="ch2.newtonTitle"></h3>
-                    <div class="newton-wrap"><div class="newton" id="newton"></div></div>
-                    <label class="slider-label" for="newton-speed"><span data-i18n="ch2.speed"></span>: <b id="newton-speed-label"></b></label>
-                    <input type="range" id="newton-speed" min="0" max="100" value="0">
+                    <div class="viz">
+                        <div class="newton-wrap"><div class="newton" id="newton"></div></div>
+                        <div class="dock">
+                            <label class="slider-label" for="newton-speed"><span data-i18n="ch2.speed"></span>: <b id="newton-speed-label"></b></label>
+                            <input type="range" id="newton-speed" min="0" max="100" value="0">
+                        </div>
+                    </div>
                     <p class="small" data-i18n="ch2.newtonNote"></p>
                 </div>
             </div>
@@ -103,53 +111,43 @@
             <div class="chapter-head"><span class="chapter-no">3</span><h2 data-i18n="ch3.title"></h2></div>
             <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch3.bubble"></div></div>
             <div class="widget">
-                <canvas id="bend-canvas" class="canvas-bend touch-canvas" data-i18n-aria="ch3.canvasLabel"></canvas>
-                <p class="explain" id="bend-explain" aria-live="polite"></p>
-                <div class="control-grid">
-                    <div class="control">
-                        <span class="slider-label" data-i18n="ch3.shape"></span>
-                        <div class="segmented" id="bend-shape">
-                            <button class="seg on" data-shape="prism" data-i18n="ch3.prism"></button>
-                            <button class="seg" data-shape="drop" data-i18n="ch3.drop"></button>
+                <div class="viz">
+                    <div class="viz-bar">
+                        <div class="menu" id="bend-menu">
+                            <button type="button" class="tool menu-btn" aria-haspopup="true" aria-expanded="false">
+                                <span class="shape-icon" id="bend-shape-icon"></span><span id="bend-shape-name"></span><span class="caret" aria-hidden="true"></span>
+                            </button>
+                            <div class="menu-pop" hidden>
+                                <span class="pop-label" data-i18n="ch3.shape"></span>
+                                <div class="segmented" id="bend-shape">
+                                    <button class="seg on" data-shape="prism" data-i18n="ch3.prism"></button>
+                                    <button class="seg" data-shape="drop" data-i18n="ch3.drop"></button>
+                                </div>
+                                <span class="pop-label" data-i18n="ch3.material"></span>
+                                <div class="segmented" id="bend-material">
+                                    <button class="seg" data-material="water" data-i18n="ch3.water"></button>
+                                    <button class="seg on" data-material="glass" data-i18n="ch3.glass"></button>
+                                    <button class="seg" data-material="diamond" data-i18n="ch3.diamond"></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bar-group" id="bend-extra">
+                            <div class="segmented" id="bend-bounces">
+                                <button class="seg on" data-bounces="1" data-i18n="ch3.b1"></button>
+                                <button class="seg" data-bounces="2" data-i18n="ch3.b2"></button>
+                            </div>
+                            <button type="button" class="tool toggle" id="bend-many" data-i18n="ch3.many"></button>
                         </div>
                     </div>
-                    <div class="control">
-                        <span class="slider-label" data-i18n="ch3.material"></span>
-                        <div class="segmented" id="bend-material">
-                            <button class="seg" data-material="water" data-i18n="ch3.water"></button>
-                            <button class="seg on" data-material="glass" data-i18n="ch3.glass"></button>
-                            <button class="seg" data-material="diamond" data-i18n="ch3.diamond"></button>
-                        </div>
-                    </div>
-                    <div class="control">
-                        <span class="slider-label" data-i18n="ch3.light"></span>
+                    <canvas id="bend-canvas" class="canvas-bend" data-i18n-aria="ch3.canvasLabel"></canvas>
+                    <div class="dock dock-line">
                         <div class="segmented" id="bend-light">
                             <button class="seg on" data-light="white" data-i18n="ch3.white"></button>
                             <button class="seg" data-light="one" data-i18n="ch3.one"></button>
                         </div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="bend-colour"><span data-i18n="ch3.colour"></span>: <b id="bend-colour-label"></b></label>
-                        <input type="range" id="bend-colour" min="400" max="700" value="620" class="rainbow-range" disabled>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="bend-hit" data-i18n="ch3.hit"></label>
-                        <input type="range" id="bend-hit" min="0" max="100" value="55">
-                    </div>
-                    <div class="control stack" id="bend-extra">
-                        <div data-variant="prism">
-                            <label class="slider-label" for="bend-turn" data-i18n="ch3.turn"></label>
-                            <input type="range" id="bend-turn" min="-35" max="35" value="0">
-                        </div>
-                        <div data-variant="drop">
-                            <span class="slider-label" data-i18n="ch3.bounces"></span>
-                            <div class="button-row">
-                                <div class="segmented" id="bend-bounces">
-                                    <button class="seg on" data-bounces="1" data-i18n="ch3.b1"></button>
-                                    <button class="seg" data-bounces="2" data-i18n="ch3.b2"></button>
-                                </div>
-                                <button class="btn toggle small-btn" id="bend-many" data-i18n="ch3.many"></button>
-                            </div>
+                        <div class="dock-slider">
+                            <label class="slider-label" for="bend-colour"><span data-i18n="ch3.colour"></span>: <b id="bend-colour-label"></b></label>
+                            <input type="range" id="bend-colour" min="400" max="700" value="620" class="rainbow-range" disabled>
                         </div>
                     </div>
                 </div>
@@ -157,6 +155,7 @@
                     <p class="hint" data-variant="prism" data-i18n="ch3.hintPrism"></p>
                     <p class="hint" data-variant="drop" data-i18n="ch3.hintDrop"></p>
                 </div>
+                <p class="explain" id="bend-explain" aria-live="polite"></p>
                 <p class="small" data-i18n="ch3.note"></p>
             </div>
             <div class="facts" data-facts="ch3"></div>
@@ -180,79 +179,84 @@
             <div class="chapter-head"><span class="chapter-no">5</span><h2 data-i18n="ch5.title"></h2></div>
             <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch5.bubble"></div></div>
             <div class="widget lab">
-                <div class="preset-row">
-                    <span class="slider-label" data-i18n="ch5.presets"></span>
-                    <div class="button-row" id="lab-presets"></div>
-                    <span class="cap-hint" data-i18n="ch5.presetHint"></span>
-                </div>
-                <div class="lab-grid">
-                    <figure class="lab-view">
-                        <figcaption data-i18n="ch5.viewTitle"></figcaption>
-                        <canvas id="sky-canvas" class="canvas-sky" data-i18n-aria="ch5.viewLabel"></canvas>
-                    </figure>
-                    <figure>
-                        <figcaption><span data-i18n="ch5.mapTitle"></span> <span class="cap-hint" data-i18n="ch5.mapHint"></span></figcaption>
-                        <canvas id="map-canvas" class="canvas-map touch-canvas" data-i18n-aria="ch5.mapLabel"></canvas>
-                    </figure>
-                    <figure>
-                        <figcaption><span data-i18n="ch5.sideTitle"></span> <span class="cap-hint" data-i18n="ch5.sideHint"></span></figcaption>
-                        <canvas id="side-canvas" class="canvas-side touch-canvas" data-i18n-aria="ch5.sideLabel"></canvas>
-                    </figure>
-                    <figure class="lab-drop">
-                        <figcaption><span data-i18n="ch5.dropTitle"></span> <span class="cap-hint" data-i18n="ch5.dropHint"></span></figcaption>
-                        <canvas id="drop-canvas" class="canvas-drop" data-i18n-aria="ch5.dropLabel"></canvas>
-                    </figure>
-                </div>
-                <div class="control-grid">
-                    <div class="control">
-                        <span class="slider-label" data-i18n="ch5.whereLabel"></span>
-                        <div class="segmented" id="lab-where">
-                            <button class="seg on" data-where="ground" data-i18n="ch5.whereGround"></button>
-                            <button class="seg" data-where="plane" data-i18n="ch5.wherePlane"></button>
+                <div class="viz">
+                    <div class="viz-bar">
+                        <div class="segmented" id="lab-where" data-i18n-aria="ch5.whereLabel" role="group">
+                            <button class="seg on" data-where="ground"><span aria-hidden="true">🧍</span> <span class="tool-text" data-i18n="ch5.whereGround"></span></button>
+                            <button class="seg" data-where="plane"><span aria-hidden="true">✈️</span> <span class="tool-text" data-i18n="ch5.wherePlane"></span></button>
                         </div>
-                    </div>
-                    <div class="control">
-                        <span class="slider-label" data-i18n="ch5.sourceLabel"></span>
-                        <div class="segmented" id="lab-source">
-                            <button class="seg on" data-source="sun" data-i18n="ch5.sourceSun"></button>
-                            <button class="seg" data-source="moon" data-i18n="ch5.sourceMoon"></button>
+                        <div class="segmented" id="lab-source" data-i18n-aria="ch5.sourceLabel" role="group">
+                            <button class="seg on" data-source="sun"><span aria-hidden="true">☀️</span> <span class="tool-text" data-i18n="ch5.sourceSun"></span></button>
+                            <button class="seg" data-source="moon"><span aria-hidden="true">🌙</span> <span class="tool-text" data-i18n="ch5.sourceMoon"></span></button>
                         </div>
+                        <button type="button" class="tool toggle on" id="lab-helpers"><span aria-hidden="true">📐</span> <span class="tool-text" data-i18n="ch5.helpers"></span></button>
                     </div>
-                    <div class="control">
-                        <span class="slider-label" data-i18n="ch5.showLabel"></span>
-                        <div class="button-row">
-                            <button class="btn toggle small-btn on" id="lab-helpers" data-i18n="ch5.helpers"></button>
+                    <div class="lab-grid">
+                        <figure class="lab-view">
+                            <figcaption data-i18n="ch5.viewTitle"></figcaption>
+                            <canvas id="sky-canvas" class="canvas-sky" data-i18n-aria="ch5.viewLabel"></canvas>
+                        </figure>
+                        <figure>
+                            <figcaption><span data-i18n="ch5.mapTitle"></span> <span class="cap-hint" data-i18n="ch5.mapHint"></span></figcaption>
+                            <canvas id="map-canvas" class="canvas-map" data-i18n-aria="ch5.mapLabel"></canvas>
+                        </figure>
+                        <figure>
+                            <figcaption><span data-i18n="ch5.sideTitle"></span> <span class="cap-hint" data-i18n="ch5.sideHint"></span></figcaption>
+                            <canvas id="side-canvas" class="canvas-side" data-i18n-aria="ch5.sideLabel"></canvas>
+                        </figure>
+                        <figure class="lab-drop">
+                            <figcaption><span data-i18n="ch5.dropTitle"></span> <span class="cap-hint" data-i18n="ch5.dropHint"></span></figcaption>
+                            <canvas id="drop-canvas" class="canvas-drop" data-i18n-aria="ch5.dropLabel"></canvas>
+                        </figure>
+                    </div>
+                    <div class="dock lab-dock">
+                        <div class="tabs" id="lab-tabs" role="tablist">
+                            <button type="button" class="tab on" role="tab" data-tab="presets"><span aria-hidden="true">⭐</span> <span data-i18n="ch5.tabPresets"></span></button>
+                            <button type="button" class="tab" role="tab" data-tab="light"><span aria-hidden="true">☀️</span> <span id="lab-tab-light"></span></button>
+                            <button type="button" class="tab" role="tab" data-tab="clouds"><span aria-hidden="true">☁️</span> <span data-i18n="ch5.tabClouds"></span></button>
+                            <button type="button" class="tab" role="tab" data-tab="rain"><span aria-hidden="true">🌧️</span> <span data-i18n="ch5.tabRain"></span></button>
                         </div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="lab-elev"><span id="lab-elev-name"></span> <b id="lab-elev-label"></b></label>
-                        <input type="range" id="lab-elev" min="0" max="60" value="15" class="sun-range">
-                        <div class="slider-ends"><span data-i18n="ch5.low"></span><span data-i18n="ch5.high"></span></div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="lab-dir"><span id="lab-dir-name"></span> <b id="lab-dir-label"></b></label>
-                        <input type="range" id="lab-dir" min="-180" max="180" value="0">
-                        <div class="slider-ends three"><span data-i18n="ch5.dirLeft"></span><span data-i18n="ch5.dirBehind"></span><span data-i18n="ch5.dirRight"></span></div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="lab-size"><span data-i18n="ch5.dropSize"></span> <b id="lab-size-label"></b></label>
-                        <input type="range" id="lab-size" min="0" max="100" value="81" class="drop-range">
-                        <div class="slider-ends"><span data-i18n="ch5.dropFog"></span><span data-i18n="ch5.dropRain"></span></div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="lab-clear"><span data-i18n="ch5.clear"></span> <b id="lab-clear-label"></b></label>
-                        <input type="range" id="lab-clear" min="0" max="100" value="70">
-                        <div class="slider-ends"><span data-i18n="ch5.clearLow"></span><span data-i18n="ch5.clearHigh"></span></div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="lab-dark"><span data-i18n="ch5.dark"></span> <b id="lab-dark-label"></b></label>
-                        <input type="range" id="lab-dark" min="0" max="100" value="40">
-                        <div class="slider-ends"><span data-i18n="ch5.darkLow"></span><span data-i18n="ch5.darkHigh"></span></div>
-                    </div>
-                    <div class="control">
-                        <label class="slider-label" for="lab-rain"><span data-i18n="ch5.rainAmount"></span> <b id="lab-rain-label"></b></label>
-                        <input type="range" id="lab-rain" min="0" max="100" value="60">
-                        <div class="slider-ends"><span data-i18n="ch5.rainLow"></span><span data-i18n="ch5.rainHigh"></span></div>
+                        <div class="tab-panels" id="lab-panels">
+                            <div class="tab-panel panel-presets on" data-tab="presets" role="tabpanel">
+                                <h4 class="panel-title" data-i18n="ch5.presets"></h4>
+                                <div class="strip" id="lab-presets"></div>
+                                <span class="cap-hint" data-i18n="ch5.presetHint"></span>
+                            </div>
+                            <div class="tab-panel" data-tab="light" role="tabpanel">
+                                <h4 class="panel-title" id="lab-title-light"></h4>
+                            <div class="dock-slider">
+                                <label class="slider-label" for="lab-elev"><span id="lab-elev-name"></span> <b id="lab-elev-label"></b></label>
+                                <input type="range" id="lab-elev" min="0" max="60" value="15" class="sun-range">
+                                <div class="slider-ends"><span data-i18n="ch5.low"></span><span data-i18n="ch5.high"></span></div>
+                            </div>
+                            <div class="dock-slider">
+                                <label class="slider-label" for="lab-dir"><span id="lab-dir-name"></span> <b id="lab-dir-label"></b></label>
+                                <input type="range" id="lab-dir" min="-180" max="180" value="0">
+                            </div>
+                            </div>
+                            <div class="tab-panel" data-tab="clouds" role="tabpanel">
+                                <h4 class="panel-title" data-i18n="ch5.tabClouds"></h4>
+                            <div class="dock-slider">
+                                <label class="slider-label" for="lab-clear"><span data-i18n="ch5.clear"></span> <b id="lab-clear-label"></b></label>
+                                <input type="range" id="lab-clear" min="0" max="100" value="70">
+                            </div>
+                            <div class="dock-slider">
+                                <label class="slider-label" for="lab-dark"><span data-i18n="ch5.dark"></span> <b id="lab-dark-label"></b></label>
+                                <input type="range" id="lab-dark" min="0" max="100" value="40">
+                            </div>
+                            </div>
+                            <div class="tab-panel" data-tab="rain" role="tabpanel">
+                                <h4 class="panel-title" data-i18n="ch5.tabRain"></h4>
+                            <div class="dock-slider">
+                                <label class="slider-label" for="lab-rain"><span data-i18n="ch5.rainAmount"></span> <b id="lab-rain-label"></b></label>
+                                <input type="range" id="lab-rain" min="0" max="100" value="60">
+                            </div>
+                            <div class="dock-slider">
+                                <label class="slider-label" for="lab-size"><span data-i18n="ch5.dropSize"></span> <b id="lab-size-label"></b></label>
+                                <input type="range" id="lab-size" min="0" max="100" value="81" class="drop-range">
+                            </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="explain explain-tall" id="lab-explain" aria-live="polite"></div>
@@ -265,14 +269,18 @@
             <div class="chapter-head"><span class="chapter-no">6</span><h2 data-i18n="ch6.title"></h2></div>
             <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch6.bubble"></div></div>
             <div class="widget">
-                <div class="spectrum-wrap">
-                    <div class="spectrum-icons" id="spectrum-icons"></div>
-                    <div class="spectrum-bar" id="spectrum-bar"></div>
+                <div class="viz">
+                    <div class="viz-bar spectrum-head">
+                        <div class="spectrum-wrap">
+                            <div class="spectrum-icons" id="spectrum-icons"></div>
+                            <div class="spectrum-bar" id="spectrum-bar"></div>
+                        </div>
+                        <input type="range" id="spectrum-slider" min="0" max="1000" value="600" data-i18n-aria="ch6.sliderLabel">
+                        <div class="slider-ends"><span data-i18n="ch6.longEnd"></span><span data-i18n="ch6.shortEnd"></span></div>
+                    </div>
+                    <p class="small" data-i18n="ch6.barHint"></p>
+                    <canvas id="spectrum-canvas" class="canvas-spectrum" data-i18n-aria="ch6.canvasLabel"></canvas>
                 </div>
-                <input type="range" id="spectrum-slider" min="0" max="1000" value="600" data-i18n-aria="ch6.sliderLabel">
-                <div class="slider-ends"><span data-i18n="ch6.longEnd"></span><span data-i18n="ch6.shortEnd"></span></div>
-                <p class="small" data-i18n="ch6.barHint"></p>
-                <canvas id="spectrum-canvas" class="canvas-spectrum" data-i18n-aria="ch6.canvasLabel"></canvas>
                 <div class="spectrum-info">
                     <div class="stack" id="spectrum-text"></div>
                     <div class="cells">
@@ -293,9 +301,13 @@
             <div class="chapter-head"><span class="chapter-no">7</span><h2 data-i18n="ch7.title"></h2></div>
             <div class="lumi-row"><div class="lumi" aria-hidden="true"><span></span></div><div class="bubble" data-i18n-html="ch7.bubble"></div></div>
             <div class="widget">
-                <div class="button-row" id="animal-buttons"></div>
-                <canvas id="animal-canvas" class="canvas-animal" data-i18n-aria="ch7.canvasLabel"></canvas>
-                <div class="button-row"><button class="btn toggle small-btn on" id="animal-compare" data-i18n="ch7.compare"></button></div>
+                <div class="viz">
+                    <canvas id="animal-canvas" class="canvas-animal" data-i18n-aria="ch7.canvasLabel"></canvas>
+                    <div class="dock dock-line">
+                        <button type="button" class="tool toggle on" id="animal-compare"><span aria-hidden="true">◐</span> <span data-i18n="ch7.compare"></span></button>
+                        <div class="strip" id="animal-buttons"></div>
+                    </div>
+                </div>
                 <div class="explain stack" id="animal-info" aria-live="polite"></div>
                 <p class="small" data-i18n="ch7.note"></p>
             </div>
@@ -317,7 +329,7 @@
     </main>
 
     <footer>
-        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/rainbow" target="_blank" rel="noopener" class="version">v1.0.0</a>
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/rainbow" target="_blank" rel="noopener" class="version">v1.1.0</a>
         <span><span data-i18n="footer.partOf"></span> <a href="https://github.com/utforsk/utforsk.github.io">utforsk</a></span>
     </footer>
 

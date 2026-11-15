@@ -97,18 +97,30 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .lang-switch button.on { background: var(--accent); color: #1a1430; }
 
-.chips {
+.chips { gap: 6px; padding: 6px 0 8px; margin: 0 -16px; padding-inline: 16px; scroll-padding-inline: 16px; }
+
+/* Horizontal strips: swipe or drag sideways, faded edges show there is more. */
+.strip {
     display: flex;
     gap: 6px;
+    align-items: center;
     overflow-x: auto;
-    padding: 6px 0 8px;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l, 0px), #000 calc(100% - var(--fade-r, 0px)), transparent 100%);
 }
 
-.chips::-webkit-scrollbar { display: none; }
+.strip::-webkit-scrollbar { display: none; }
+.strip.more-left { --fade-l: 28px; }
+.strip.more-right { --fade-r: 28px; }
+.strip.dragging { cursor: grabbing; user-select: none; }
+.strip.dragging * { pointer-events: none; }
+.strip > * { flex: none; }
+.strip-label { font-size: 12px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 2px 0 6px; }
+.strip-label:first-child { padding-left: 0; }
 
 .chip {
-    flex: none;
     font-size: 14px;
     font-weight: 800;
     color: var(--text-dim);
@@ -414,13 +426,120 @@ canvas {
     background: #050816;
 }
 
-.touch-canvas { touch-action: none; cursor: grab; }
-.touch-canvas:active { cursor: grabbing; }
+/* A canvas with the controls that belong to it. The bar and dock stay on screen while the canvas is in view. */
+.viz { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.viz-bar, .dock {
+    position: sticky;
+    z-index: 20;
+    background: rgba(19, 26, 63, 0.93);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 8px 10px;
+    min-width: 0;
+}
+
+.viz-bar { top: calc(var(--nav-h) + 6px); display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.dock { bottom: max(6px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 4px; box-shadow: 0 -6px 18px rgba(5, 8, 22, 0.35); }
+.dock.button-row { flex-direction: row; }
+.dock-line { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.dock-line .dock-slider { flex: 1 1 220px; }
+.dock-line .strip { flex: 1 1 0; }
+.dock-slider { display: flex; flex-direction: column; min-width: 0; }
+.dock-slider input[type="range"] { height: 30px; }
+.dock .slider-label { font-size: 15px; }
+.dock .slider-ends { font-size: 12px; margin-top: -2px; }
+.bar-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-left: auto; }
+.bar-group.off { display: none; }
+
+.tool {
+    font: 800 14px var(--font-body);
+    color: var(--text);
+    background: var(--card-2);
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    padding: 5px 10px;
+    min-height: 40px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.tool:hover { border-color: var(--accent); }
+.tool.toggle.on { background: var(--accent); border-color: var(--accent); color: #1a1430; }
+.tool:focus-visible, .tab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.viz-bar .seg, .dock .seg { font-size: 14px; padding: 6px 10px; min-height: 34px; }
+
+.menu { position: relative; }
+.caret { width: 0; height: 0; border: 5px solid transparent; border-top-color: currentColor; border-bottom: 0; }
+.shape-icon { display: inline-grid; place-items: center; }
+.shape-icon svg { width: 22px; height: 22px; }
+
+.menu-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    width: max-content;
+    max-width: calc(100vw - 48px);
+}
+
+.menu-pop[hidden] { display: none; }
+.pop-label { font-size: 13px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+    flex: 1 0 auto;
+    font: 800 14px var(--font-body);
+    color: var(--text-dim);
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    padding: 4px 8px 5px;
+    min-height: 38px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tab.on { color: var(--text); border-bottom-color: var(--accent); }
+
+/* Only the chosen tab shows, but all share one grid cell so the dock never changes height. */
+.tab-panels { display: grid; }
+.tab-panel { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tab-panel:not(.on) { visibility: hidden; }
+.panel-title { display: none; font-size: 14px; color: var(--text-dim); }
+.panel-presets .strip { padding: 4px 0; }
+.panel-presets .cap-hint { font-size: 13px; }
+
+@media (min-width: 900px) {
+    .lab-dock .tabs { display: none; }
+    .lab-dock .tab-panels { grid-template-columns: repeat(3, 1fr); gap: 4px 20px; }
+    .lab-dock .tab-panel { grid-area: auto; visibility: visible; }
+    .lab-dock .panel-presets { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+    .lab-dock .panel-presets .strip { flex: 1 1 0; }
+    .lab-dock .panel-presets .cap-hint { flex-basis: 100%; }
+    .lab-dock .panel-title { display: block; }
+    .lab-dock .panel-presets .panel-title { display: none; }
+}
 
 .canvas-wave { aspect-ratio: 16 / 6; }
 .canvas-mix { aspect-ratio: 1 / 0.85; }
 .canvas-bend { aspect-ratio: 16 / 9; }
-.canvas-sky { aspect-ratio: 16 / 8; }
+.canvas-sky { aspect-ratio: 16 / 7; }
 .canvas-map { aspect-ratio: 1 / 0.8; }
 .canvas-side { aspect-ratio: 1 / 0.8; }
 .canvas-drop { aspect-ratio: 1 / 0.8; }
@@ -622,8 +741,6 @@ input[type="range"]:focus-visible { outline: 3px solid var(--accent); outline-of
 .color-card svg { width: 100%; height: 60px; }
 
 /* Rainbow lab */
-.preset-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-
 .lab-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -636,6 +753,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--accent); outline-of
 .cap-hint { font-family: var(--font-body); font-weight: 600; font-size: 14px; color: var(--accent); }
 
 /* Spectrum */
+.spectrum-head { display: block; }
 .spectrum-wrap { position: relative; padding-top: 34px; }
 
 .spectrum-icons { position: absolute; left: 0; right: 0; top: 0; height: 32px; }
@@ -661,7 +779,7 @@ input[type="range"]:focus-visible { outline: 3px solid var(--accent); outline-of
     border-left: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-.spectrum-bar { display: flex; height: 56px; border-radius: 14px; overflow: hidden; position: relative; }
+.spectrum-bar { display: flex; height: 56px; border-radius: 14px; overflow: hidden; position: relative; touch-action: pan-y; cursor: ew-resize; }
 
 .spectrum-seg {
     display: flex;
@@ -800,6 +918,7 @@ footer { display: flex; justify-content: center; gap: 16px; padding: 40px 16px 5
     .lab-grid { grid-template-columns: 1fr 1fr; }
     .lab-grid .lab-drop { grid-column: 1 / -1; }
     .lab-drop .canvas-drop { aspect-ratio: 16 / 8; }
+    .canvas-sky { aspect-ratio: 16 / 8; }
 }
 
 /* Phone */
@@ -826,6 +945,13 @@ footer { display: flex; justify-content: center; gap: 16px; padding: 40px 16px 5
     .spectrum-seg { font-size: 10px; }
     .spectrum-icon { font-size: 15px; }
     .explain-tall { min-height: 21em; }
+    .tool-text { display: none; }
+    .tab { font-size: 13px; padding-inline: 4px; }
+    .tool.menu-btn .tool-text, .tool#bend-many { font-size: 13px; }
+    .topnav { padding-top: 6px; }
+    .brand { font-size: 18px; }
+    .spectrum-wrap { padding-top: 28px; }
+    .spectrum-bar { height: 44px; }
     .explain { min-height: 7em; }
     .facts { gap: 22px; }
 }

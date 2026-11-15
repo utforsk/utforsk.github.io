@@ -131,9 +131,9 @@ Follow Lumi, a tiny ray of sunlight, from light waves through a prism and a rain
 
 - 🌊 **Light waves:** Change the wavelength and watch the colour change, plus a colour-matching game.
 - 🔺 **Bending lab:** Ray-traced prism and raindrop with material, colour, bounces and a ray histogram showing why 42° is special.
-- ☀️ **Rainbow lab:** Drag the sun around you and up and down, change drop size, moonlight or plane view, and see the sky, map and side view update together.
+- ☀️ **Rainbow lab:** Move the sun, change the weather, rain and drop size, switch between ground and plane, and follow the light inside a single raindrop.
 - 📡 **Invisible light:** Radio to gamma rays with everyday devices, how each is sent and caught, antenna sizes and the longest and shortest waves.
-- 🐝 **Animal eyes:** The rainbow as seen by a bee, bird, dog, snake, mantis shrimp and a colour-blind person, side by side with yours.
+- 🐝 **Animal eyes:** The rainbow as seen by five kinds of colour blindness and animals from bees, flies and jumping spiders to eagles, reindeer and octopuses, side by side with yours.
 - 🧪 **Experiments** to try at home (including seeing a remote's infrared with a phone camera) and a quiz.
 
 More projects will be added here as ideas escape from the prompt buffer.
