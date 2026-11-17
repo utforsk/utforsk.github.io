@@ -136,6 +136,20 @@ Follow Lumi, a tiny ray of sunlight, from light waves through a prism and a rain
 - 🐝 **Animal eyes:** The rainbow as seen by five kinds of colour blindness and animals from bees, flies and jumping spiders to eagles, reindeer and octopuses, side by side with yours.
 - 🧪 **Experiments** to try at home (including seeing a remote's infrared with a phone camera) and a quiz.
 
+### [`energy`](https://utforsk.github.io/energy)
+
+> ✅ **Status: Available**
+> Try it now at [utforsk.github.io/energy](https://utforsk.github.io/energy)
+> 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[energy]%20Issue%3A%20&labels=energy)
+
+An interactive lab for kids around 10 about energy, in English and Norwegian.
+Every ball is a bit of energy, its colour is the kind of energy, and the number of balls never changes.
+
+- 🎨 **Energy balls:** Nine kinds of energy, sorted into stored and on the move.
+- 🧪 **Energy lab:** One scene, five experiments: eat an apple (brain, heart, a jump, a song), a stone dropped off a cliff, a bouncy or clay ball thrown at the ground, a scream with or without a pillow, and a blast inside or outside a mountain. Choose how much energy, play, pause and scrub, and tap a ball to follow its journey. Real numbers for speed, height and how much warmer things get.
+- 🌌 **Whole story:** Stretch any experiment back to the Big Bang (atoms, the Sun, sunlight, plants, food or fossil fuel) and forward to light flying through space for ever.
+- ❓ **Tricky questions** as flip cards, and a quiz.
+
 More projects will be added here as ideas escape from the prompt buffer.
 
 ---

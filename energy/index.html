@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="theme-color" content="#111318">
+    <title>Energy Never Disappears</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-row">
+            <a href="#start" class="brand"><span class="bolt" aria-hidden="true"></span><span data-i18n="hero.title"></span></a>
+            <div class="chips" id="chapter-chips"></div>
+            <div class="lang-switch" role="group" data-i18n-aria="nav.language">
+                <button type="button" data-lang="en">EN</button>
+                <button type="button" data-lang="nb">NO</button>
+            </div>
+        </div>
+        <div class="charge" aria-hidden="true"><div class="charge-bar" id="charge-bar"></div></div>
+    </nav>
+
+    <header class="hero" id="start">
+        <div class="hero-main">
+            <div class="mascot" aria-hidden="true"></div>
+            <div>
+                <h1 data-i18n="hero.title"></h1>
+                <p class="hero-lead" data-i18n="hero.lead"></p>
+            </div>
+        </div>
+        <ol class="rules" id="rules"></ol>
+        <a class="btn btn-big" href="#lab" data-i18n="hero.start"></a>
+    </header>
+
+    <main>
+        <section class="chapter" id="kinds" data-chip="ch1.chip">
+            <h2><span class="chapter-no">1</span><span data-i18n="ch1.title"></span></h2>
+            <p class="lead" data-i18n="ch1.lead"></p>
+            <div class="kinds">
+                <div class="kind-group">
+                    <h3 data-i18n="ch1.stored"></h3>
+                    <div class="kind-grid" data-group="stored"></div>
+                </div>
+                <div class="kind-group">
+                    <h3 data-i18n="ch1.moving"></h3>
+                    <div class="kind-grid" data-group="moving"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="chapter" id="lab" data-chip="ch2.chip">
+            <h2><span class="chapter-no">2</span><span data-i18n="ch2.title"></span></h2>
+            <p class="lead" data-i18n="ch2.lead"></p>
+            <div class="lab">
+                <div class="lab-picker" id="lab-picker" role="tablist"></div>
+                <div class="lab-stage">
+                    <canvas id="lab-canvas" data-i18n-aria="lab.canvas"></canvas>
+                    <p class="lab-caption" id="lab-caption" aria-live="polite"></p>
+                    <button type="button" class="lab-bigplay" id="lab-bigplay" data-i18n-aria="lab.play"></button>
+                    <p class="lab-hint" id="lab-hint" data-i18n="lab.tapHint"></p>
+                </div>
+                <div class="timeline">
+                    <button type="button" class="play" id="lab-play" data-i18n-aria="lab.play"></button>
+                    <div class="track">
+                        <input type="range" id="lab-scrub" min="0" max="1000" value="0" data-i18n-aria="lab.time">
+                        <div class="marks" id="lab-marks"></div>
+                    </div>
+                </div>
+                <button type="button" class="extend" id="lab-extend" aria-pressed="false"></button>
+                <div class="meter">
+                    <div class="meter-total"><b id="lab-total"></b><span data-i18n="lab.balls"></span><span class="lock" data-i18n="lab.always"></span></div>
+                    <div class="meter-bar" id="lab-bar"></div>
+                    <div class="meter-counts" id="lab-counts"></div>
+                </div>
+                <div class="lab-follow" id="lab-follow" hidden></div>
+                <div class="lab-controls">
+                    <label class="amount">
+                        <span class="ctl-title" data-i18n="lab.amount"></span>
+                        <span class="amount-row">
+                            <span class="ball-icon small" aria-hidden="true"></span>
+                            <input type="range" id="lab-amount" min="4" max="40" step="4" value="24">
+                            <span class="ball-icon big" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <div class="variant" id="lab-variant" role="group"></div>
+                </div>
+                <div class="readouts" id="lab-readouts"></div>
+            </div>
+        </section>
+
+        <section class="chapter" id="tricky" data-chip="ch3.chip">
+            <h2><span class="chapter-no">3</span><span data-i18n="ch3.title"></span></h2>
+            <p class="lead" data-i18n="ch3.lead"></p>
+            <div class="cards" id="cards"></div>
+        </section>
+
+        <section class="chapter" id="quiz" data-chip="ch4.chip">
+            <h2><span class="chapter-no">4</span><span data-i18n="ch4.title"></span></h2>
+            <div class="quiz" id="quiz-box" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <footer>
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/energy" target="_blank" rel="noopener" class="version">v1.0.0</a>
+        <span><span data-i18n="footer.partOf"></span> <a href="https://github.com/utforsk/utforsk.github.io">utforsk</a></span>
+    </footer>
+
+    <script src="i18n.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
