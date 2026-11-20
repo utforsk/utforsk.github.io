@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="theme-color" content="#16181d">
+    <title>Matte i hodet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="topnav">
+        <div class="topnav-row">
+            <a href="./" class="brand"><span class="logo" aria-hidden="true">+</span><span data-i18n="app.title"></span></a>
+            <div class="modes" id="modes" role="tablist"></div>
+            <div class="lang-switch" role="group" data-i18n-aria="nav.language">
+                <button type="button" data-lang="nb">NO</button>
+                <button type="button" data-lang="en">EN</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="wrap">
+        <p class="lead" data-i18n="app.lead"></p>
+
+        <section class="problem">
+            <p class="kind" id="kind"></p>
+            <div class="problem-row">
+                <input type="number" id="in-a" inputmode="numeric" min="0" data-i18n-aria="problem.first">
+                <span class="op" id="op-sign"></span>
+                <input type="number" id="in-b" inputmode="numeric" min="0" data-i18n-aria="problem.second">
+                <span class="op" id="eq-sign">=</span>
+                <button type="button" class="answer" id="answer" data-i18n-aria="problem.reveal">?</button>
+            </div>
+            <div class="example">
+                <div class="levels" id="levels" role="group"></div>
+                <button type="button" class="btn" id="btn-example" data-i18n="problem.example"></button>
+            </div>
+            <p class="error" id="error" role="alert" hidden></p>
+        </section>
+
+        <section class="ways">
+            <h2 data-i18n="ways.title"></h2>
+            <p class="dim" data-i18n="ways.hint"></p>
+            <div class="strategies" id="strategies" role="tablist"></div>
+            <div class="depth">
+                <span data-i18n="ways.depth"></span>
+                <div class="levels" id="depths" role="group" data-i18n-aria="ways.depth"></div>
+            </div>
+            <p class="none" id="none" hidden data-i18n="ways.none"></p>
+        </section>
+
+        <section class="stage" id="stage">
+            <div class="stage-main">
+                <div class="eq" id="eq" aria-live="polite"></div>
+                <div class="scene-box">
+                    <svg class="scene" id="scene" role="img" data-i18n-aria="stage.scene"></svg>
+                </div>
+                <div class="controls">
+                    <button type="button" class="ctl" id="btn-restart" data-i18n-aria="stage.restart">&#8634;</button>
+                    <button type="button" class="btn btn-step" id="btn-prev">&#9664; <span data-i18n="stage.prev"></span></button>
+                    <button type="button" class="btn btn-step btn-next" id="btn-next"><span data-i18n="stage.next"></span> &#9654;</button>
+                </div>
+                <div class="dots" id="dots"></div>
+                <div class="think">
+                    <div class="bubble" id="think" aria-live="polite"></div>
+                    <p class="ask" id="ask"><b data-i18n="stage.ask"></b> <span id="ask-text"></span></p>
+                </div>
+            </div>
+            <aside class="side">
+                <div class="card">
+                    <h3 data-i18n="stage.head"></h3>
+                    <ol class="steps" id="steps"></ol>
+                </div>
+                <details class="card tips">
+                    <summary data-i18n="stage.tip"></summary>
+                    <p id="tip"></p>
+                </details>
+            </aside>
+        </section>
+    </main>
+
+    <footer>
+        <a href="https://github.com/utforsk/utforsk.github.io/tree/main/math" target="_blank" rel="noopener" class="version">v1.0.0</a>
+        <span><span data-i18n="footer.partOf"></span> <a href="https://github.com/utforsk/utforsk.github.io">utforsk</a></span>
+    </footer>
+
+    <script src="i18n.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

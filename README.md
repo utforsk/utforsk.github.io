@@ -150,6 +150,24 @@ Every ball is a bit of energy, its colour is the kind of energy, and the number 
 - 🌌 **Whole story:** Stretch any experiment back to the Big Bang (atoms, the Sun, sunlight, plants, food or fossil fuel) and forward to light flying through space for ever.
 - ❓ **Tricky questions** as flip cards, and a quiz.
 
+### [`math`](https://utforsk.github.io/math)
+
+> ✅ **Status: Available**
+> Try it now at [utforsk.github.io/math](https://utforsk.github.io/math)
+> 💬 Found a bug or have an idea? [Create an issue](https://github.com/utforsk/utforsk.github.io/issues/new?title=[math]%20Issue%3A%20&labels=math)
+
+A helper for parents to show kids how to think about sums in their head, in Norwegian (default) and English.
+Instead of marbles on the table: animated blocks, number lines and grids that move the way the thinking goes.
+
+- ➕ **Add:** Borrow to make ten (14 + 8 → 12 + 10), tens and ones apart, jumps on the number line, round and adjust, near doubles, swap the order, column method with carrying (mente).
+- ➖ **Minus:** Take away tens and ones, jump back, count up, round and adjust, same difference (53 − 27 = 56 − 30), column method with exchanging (veksling).
+- ✖️ **Times:** Split into easy pieces, round and take away, double and halve, times 10 then halve, double and double again, equal jumps, swap the order, column method.
+- ➗ **Divide:** Share it out, think times tables, split the number, halve and halve again, column method with the Norwegian layout.
+- 🧠 **Step by step:** Every step shows the thought, a question to ask the child and the small sums done in your head. Column methods start with an estimate (overslag) and check it at the end. Numbers up to 99 999.
+- 🔢 **More topics** (behind "More"): prime numbers (lay the cubes out as a rectangle with 2, 3, 5, 7 … rows and stop at √n, or sieve 1–100), and even and odd, 0 to 999 999 (does it end in 0, 2, 4, 6 or 8? Then why: two by two, and tens always make pairs).
+- 🔤 **Math words:** addition, subtraction, multiplication and division, with the names of the parts.
+- 🎲 **Own numbers or examples** at three levels. Shareable links (`?m=add&a=14&b=8`), `?debug` shows the worked example as JSON.
+
 More projects will be added here as ideas escape from the prompt buffer.
 
 ---

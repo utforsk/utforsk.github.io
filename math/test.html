@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math logic tests</title>
+    <style>
+        body { margin: 0; padding: 16px; background: #16181d; color: #eceef2; font: 14px/1.45 ui-monospace, Menlo, monospace; }
+        h1 { font-size: 18px; margin: 0 0 8px; }
+        .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+        input, select, button { font: inherit; background: #262a31; color: inherit; border: 1px solid #30343c; border-radius: 6px; padding: 4px 8px; }
+        .sum { color: #9aa0ab; }
+        .bad { color: #ff5a5f; }
+        .ok { color: #43d17a; }
+        details { border-top: 1px solid #30343c; padding: 6px 0; }
+        summary { cursor: pointer; }
+        table { border-collapse: collapse; margin: 6px 0 10px; width: 100%; }
+        td, th { border-bottom: 1px solid #262a31; padding: 2px 8px; text-align: left; vertical-align: top; }
+        th { color: #9aa0ab; font-weight: normal; }
+        .small td { color: #b8bdc7; }
+        a { color: #f2c14e; }
+    </style>
+</head>
+<body>
+    <h1>Math logic tests</h1>
+    <div class="bar">
+        <label>Filter <input id="filter" placeholder="e.g. makeTen 53+29"></label>
+        <label>Depth <select id="depth"><option value="all">all</option><option>1</option><option>2</option><option>3</option></select></label>
+        <label><input type="checkbox" id="onlyBad" checked> only cases with issues</label>
+        <button type="button" id="sweep">Full sweep (counts only)</button>
+    </div>
+    <p class="sum" id="summary"></p>
+    <pre class="sum" id="sweepOut"></pre>
+    <div id="out"></div>
+
+    <script src="i18n.js"></script>
+    <script src="script.js"></script>
+    <script>
+        'use strict';
+        const CASES = {
+            add: { a: [3, 7, 8, 9, 12, 14, 17, 19, 23, 29, 38, 47, 53, 58, 64, 75, 88, 99, 120, 155, 248, 1234, 4572, 9999, 40567, 99999], b: [2, 5, 6, 8, 9, 11, 13, 19, 24, 29, 38, 46, 57, 99, 100, 1389, 8888, 99999] },
+            sub: { a: [11, 13, 20, 23, 31, 47, 53, 61, 70, 82, 100, 104, 150, 235, 402, 1000, 4002, 4572, 10000, 40002, 99999], b: [2, 4, 7, 9, 10, 18, 19, 27, 29, 38, 58, 99, 101, 999, 1389, 9999] },
+            mul: { a: [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 18, 19, 23, 25, 29, 38, 48, 99, 405, 1234, 9999], b: [2, 3, 4, 5, 6, 7, 8, 9, 12, 14, 19, 20, 23, 47, 99] },
+            prime: { a: [2, 3, 4, 9, 13, 25, 29, 49, 51, 57, 77, 91, 97, 100, 121, 143, 169, 191, 199, 200], b: [0] },
+            parity: { a: [0, 1, 2, 3, 1000, 1001, 12345, 99998, 999999, 7, 8, 10, 11, 20, 21, 37, 50, 64, 99, 100, 101, 128, 155, 199, 200], b: [0] },
+            div: { a: [12, 23, 36, 48, 56, 63, 72, 84, 86, 96, 100, 128, 150, 196, 200, 245, 864, 1000, 4096, 10101, 80000, 99999], b: [2, 3, 4, 5, 6, 7, 8, 9, 12, 23, 47, 99] }
+        };
+        const SWEEP = { prime: [[2, 200], [0, 0]], parity: [[0, 2000], [0, 0]], add: [[0, 120], [0, 120]], sub: [[0, 150], [0, 150]], mul: [[0, 60], [0, 60]], div: [[0, 300], [1, 12]] };
+
+        function run(mode, a, b, strat, depth) {
+            const steps = normalizeSteps(expandSteps(strat.build(a, b), depth, strat.id));
+            return { steps, issues: checkSteps(strat.id, steps, answerValue(mode, a, b)) };
+        }
+
+        function cell(tr, text, tag = 'td') {
+            const el = document.createElement(tag);
+            el.textContent = text;
+            tr.append(el);
+        }
+
+        function render() {
+            const filter = document.getElementById('filter').value.trim().toLowerCase();
+            const depthSel = document.getElementById('depth').value;
+            const onlyBad = document.getElementById('onlyBad').checked;
+            const depths = depthSel === 'all' ? DEPTHS : [Number(depthSel)];
+            const out = document.getElementById('out');
+            out.replaceChildren();
+            let total = 0;
+            let bad = 0;
+            for (const mode of MODES) {
+                for (const a of CASES[mode].a) for (const b of CASES[mode].b) {
+                    if (validate(mode, a, b)) continue;
+                    for (const strat of STRATEGIES[mode]) {
+                        if (!strat.applies(a, b)) continue;
+                        for (const depth of depths) {
+                            const name = `${strat.id} ${ONE_NUMBER.includes(mode) ? a : `${a}${OP_SIGN[mode]}${b}`} d${depth}`;
+                            const key = `${strat.id} ${a}${{ add: '+', sub: '-', mul: '*', div: ':', prime: '', parity: '' }[mode]}${b}`.toLowerCase();
+                            if (filter && !name.toLowerCase().includes(filter) && !key.includes(filter)) continue;
+                            total++;
+                            const { steps, issues } = run(mode, a, b, strat, depth);
+                            if (issues.length) bad++;
+                            if (onlyBad && !issues.length) continue;
+                            const box = document.createElement('details');
+                            const sum = document.createElement('summary');
+                            sum.innerHTML = `<span class="${issues.length ? 'bad' : 'ok'}">${issues.length ? '✗' : '✓'}</span> `;
+                            sum.append(`${name} – ${steps.length} steps${issues.length ? ` – ${issues.length} issues` : ''} `);
+                            const link = document.createElement('a');
+                            link.href = `./?m=${mode}&a=${a}${ONE_NUMBER.includes(mode) ? '' : `&b=${b}`}&s=${strat.id}&d=${depth}&debug`;
+                            link.textContent = 'open';
+                            link.target = '_blank';
+                            sum.append(link);
+                            box.append(sum);
+                            if (issues.length) {
+                                const ul = document.createElement('ul');
+                                for (const msg of issues) {
+                                    const li = document.createElement('li');
+                                    li.className = 'bad';
+                                    li.textContent = msg;
+                                    ul.append(li);
+                                }
+                                box.append(ul);
+                            }
+                            const table = document.createElement('table');
+                            const head = document.createElement('tr');
+                            for (const h of ['#', 'kind', 'row', 'sums', 'memory', 'frames p/q', 'thought']) cell(head, h, 'th');
+                            table.append(head);
+                            for (const d of describeSteps(strat.id, steps)) {
+                                const tr = document.createElement('tr');
+                                if (d.kind === 'small') tr.className = 'small';
+                                cell(tr, d.i);
+                                cell(tr, d.kind);
+                                cell(tr, d.row);
+                                cell(tr, d.sums.join(' ; ') || d.eq);
+                                cell(tr, d.memory.join(', '));
+                                cell(tr, `${d.frames.p}/${d.frames.q}`);
+                                cell(tr, d.think);
+                                table.append(tr);
+                            }
+                            box.append(table);
+                            out.append(box);
+                        }
+                    }
+                }
+            }
+            document.getElementById('summary').textContent = `${total} cases, ${bad} with issues`;
+        }
+
+        function sweep() {
+            const counts = {};
+            let n = 0;
+            for (const mode of MODES) {
+                const [[a0, a1], [b0, b1]] = SWEEP[mode];
+                for (let a = a0; a <= a1; a++) for (let b = b0; b <= b1; b++) {
+                    if (validate(mode, a, b)) continue;
+                    for (const strat of STRATEGIES[mode]) {
+                        if (!strat.applies(a, b)) continue;
+                        for (const depth of DEPTHS) {
+                            n++;
+                            for (const msg of run(mode, a, b, strat, depth).issues) {
+                                const kind = `${strat.id} d${depth}: ${msg.replace(/^step \d+: /, '').replace(/\d+/g, 'N')}`;
+                                counts[kind] = counts[kind] || { count: 0, first: `${a}${OP_SIGN[mode]}${b}` };
+                                counts[kind].count++;
+                            }
+                        }
+                    }
+                }
+            }
+            const lines = Object.entries(counts).sort((p, q) => q[1].count - p[1].count).map(([k, v]) => `${String(v.count).padStart(6)}  ${k}   (e.g. ${v.first})`);
+            document.getElementById('sweepOut').textContent = `${n} runs\n${lines.join('\n') || 'no issues'}`;
+        }
+
+        const params = new URLSearchParams(location.search);
+        if (params.has('f')) document.getElementById('filter').value = params.get('f');
+        if (params.has('d')) document.getElementById('depth').value = params.get('d');
+        if (params.has('all')) document.getElementById('onlyBad').checked = false;
+        for (const id of ['filter', 'depth', 'onlyBad']) document.getElementById(id).addEventListener('input', render);
+        document.getElementById('sweep').addEventListener('click', sweep);
+        render();
+    </script>
+</body>
+</html>
